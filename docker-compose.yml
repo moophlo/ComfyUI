@@ -1,0 +1,25 @@
+name: stable
+services:
+    comfyui:
+        #build: .
+        #image: moophlo/comfyui:v0.0.5_rocm5.2_ubuntu20.04_py3.10.6_pytorch_2.1.0_navi21
+        image: moophlo/comfyui:test
+        environment:
+          HIP_VISIBLE_DEVICES: '0'
+          PYTORCH_HIP_ALLOC_CONF: 'garbage_collection_threshold:0.9,max_split_size_mb:512'
+        stdin_open: true
+        restart: always
+        tty: true
+        privileged: true
+        devices:
+            - /dev/kfd
+            - /dev/dri
+        ipc: host
+        cap_add:
+            - SYS_PTRACE
+        security_opt:
+            - seccomp=unconfined
+        volumes:
+            - /media/muflo/Volume10TB/AI/kube-comfyui-models:/dockerx/ComfyUI/models
+        ports:
+            - 8188:8188
