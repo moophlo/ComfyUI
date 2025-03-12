@@ -11,11 +11,11 @@ RUN conda update conda
 RUN conda create -y --name comfyui python=3.12.7 
 RUN conda init bash && . ~/.bashrc && echo "conda activate comfyui" >> ~/.bashrc
 RUN cd /dockerx && git clone https://github.com/comfyanonymous/ComfyUI.git && cd ComfyUI
-#RUN sed -i 's/torchaudio/numpy==1.26.4/g' /dockerx/ComfyUI/requirements.txt
-#RUN sed -i 's|^torch$|https://download.pytorch.org/whl/rocm6.2.4/torch-2.6.0%2Brocm6.2.4-cp312-cp312-manylinux_2_28_x86_64.whl|g' /dockerx/ComfyUI/requirements.txt
-#RUN sed -i 's|^torchvision$|https://download.pytorch.org/whl/rocm6.2.4/torchvision-0.21.0%2Brocm6.2.4-cp312-cp312-linux_x86_64.whl|g' /dockerx/ComfyUI/requirements.txt
-#RUN sed -i '1s|^|https://download.pytorch.org/whl/rocm6.2.4/torchaudio-2.6.0%2Brocm6.2.4-cp312-cp312-linux_x86_64.whl\n|' /dockerx/ComfyUI/requirements.txt
-#RUN sed -i '1s|^|https://download.pytorch.org/whl/pytorch_triton_rocm-3.2.0-cp312-cp312-linux_x86_64.whl\n|' /dockerx/ComfyUI/requirements.txt
+RUN sed -i 's/torchaudio/numpy==1.26.4/g' /dockerx/ComfyUI/requirements.txt
+RUN sed -i 's|^torch$|https://download.pytorch.org/whl/rocm6.2.4/torch-2.6.0%2Brocm6.2.4-cp312-cp312-manylinux_2_28_x86_64.whl|g' /dockerx/ComfyUI/requirements.txt
+RUN sed -i 's|^torchvision$|https://download.pytorch.org/whl/rocm6.2.4/torchvision-0.21.0%2Brocm6.2.4-cp312-cp312-linux_x86_64.whl|g' /dockerx/ComfyUI/requirements.txt
+RUN sed -i '1s|^|https://download.pytorch.org/whl/rocm6.2.4/torchaudio-2.6.0%2Brocm6.2.4-cp312-cp312-linux_x86_64.whl\n|' /dockerx/ComfyUI/requirements.txt
+RUN sed -i '1s|^|https://download.pytorch.org/whl/pytorch_triton_rocm-3.2.0-cp312-cp312-linux_x86_64.whl\n|' /dockerx/ComfyUI/requirements.txt
 RUN git clone https://github.com/city96/ComfyUI-GGUF /dockerx/ComfyUI/custom_nodes/ComfyUI-GGUF
 RUN conda config --add channels defaults
 RUN conda run --no-capture-output -n comfyui pip install -r requirements.txt
