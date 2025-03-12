@@ -1,32 +1,47 @@
-#FROM rocm/pytorch:rocm5.2_ubuntu20.04_py3.7_pytorch_1.11.0_navi21
-#FROM rocm/pytorch:rocm6.2.3_ubuntu22.04_py3.10_pytorch_release_2.3.0
 FROM rocm/pytorch:rocm6.3.4_ubuntu24.04_py3.12_pytorch_release_2.4.0
 
-WORKDIR /dockerx/ComfyUI
+# Set working directory for initial operations
+WORKDIR /dockerx
 
-#ENV HSA_OVERRIDE_GFX_VERSION=10.3.0
-#ENV PYTORCH_HIP_ALLOC_CONF=garbage_collection_threshold:0.9,max_split_size_mb:512
-RUN apt update && apt full-upgrade -y && apt install -y bc google-perftools && apt autoclean -y
-RUN conda update conda
-RUN conda create -y --name comfyui python=3.12.7 
-RUN conda init bash && . ~/.bashrc && echo "conda activate comfyui" >> ~/.bashrc
-RUN cd /dockerx && git clone https://github.com/comfyanonymous/ComfyUI.git && cd ComfyUI
-RUN sed -i 's/torchaudio/numpy==1.26.4/g' /dockerx/ComfyUI/requirements.txt
-RUN sed -i 's|^torch$|https://download.pytorch.org/whl/rocm6.2.4/torch-2.6.0%2Brocm6.2.4-cp312-cp312-manylinux_2_28_x86_64.whl|g' /dockerx/ComfyUI/requirements.txt
-RUN sed -i 's|^torchvision$|https://download.pytorch.org/whl/rocm6.2.4/torchvision-0.21.0%2Brocm6.2.4-cp312-cp312-linux_x86_64.whl|g' /dockerx/ComfyUI/requirements.txt
-RUN sed -i '1s|^|https://download.pytorch.org/whl/rocm6.2.4/torchaudio-2.6.0%2Brocm6.2.4-cp312-cp312-linux_x86_64.whl\n|' /dockerx/ComfyUI/requirements.txt
-RUN sed -i '1s|^|https://download.pytorch.org/whl/pytorch_triton_rocm-3.2.0-cp312-cp312-linux_x86_64.whl\n|' /dockerx/ComfyUI/requirements.txt
-RUN git clone https://github.com/city96/ComfyUI-GGUF /dockerx/ComfyUI/custom_nodes/ComfyUI-GGUF
-RUN conda config --add channels defaults
-RUN conda run --no-capture-output -n comfyui pip install -r requirements.txt
-RUN conda run --no-capture-output -n comfyui pip install -r /dockerx/ComfyUI/custom_nodes/ComfyUI-GGUF/requirements.txt
-RUN conda run --no-capture-output -n comfyui pip install onnxruntime onnxruntime-gpu
-RUN conda run --no-capture-output -n comfyui pip cache purge
-RUN mkdir -p /dockerx/ComfyUI/models/vae_approx && cd /dockerx/ComfyUI/models/vae_approx
-RUN wget -c https://github.com/madebyollin/taesd/raw/main/taesd_decoder.pth
-RUN wget -c https://github.com/madebyollin/taesd/raw/main/taesdxl_decoder.pth
-RUN cd -
-ADD run.sh .
+# Update system, install necessary packages, update conda, create & configure the environment
+RUN apt update && apt full-upgrade -y && \
+    apt install -y bc google-perftools wget && \
+    apt autoclean -y && rm -rf /var/lib/apt/lists/* && \
+    conda update -y conda && \
+    conda create -y --name comfyui python=3.12.7 && \
+    conda clean --all -y && \
+    conda init bash && \
+    echo "conda activate comfyui" >> ~/.bashrc
+
+# Clone the main repository and adjust requirements
+RUN git clone https://github.com/comfyanonymous/ComfyUI.git && \
+    cd ComfyUI && \
+    sed -i 's/torchaudio/numpy==1.26.4/g' requirements.txt && \
+    sed -i 's|^torch$|https://download.pytorch.org/whl/rocm6.2.4/torch-2.6.0%2Brocm6.2.4-cp312-cp312-manylinux_2_28_x86_64.whl|g' requirements.txt && \
+    sed -i 's|^torchvision$|https://download.pytorch.org/whl/rocm6.2.4/torchvision-0.21.0%2Brocm6.2.4-cp312-cp312-linux_x86_64.whl|g' requirements.txt && \
+    sed -i '1s|^|https://download.pytorch.org/whl/rocm6.2.4/torchaudio-2.6.0%2Brocm6.2.4-cp312-cp312-linux_x86_64.whl\n|' requirements.txt && \
+    sed -i '1s|^|https://download.pytorch.org/whl/pytorch_triton_rocm-3.2.0-cp312-cp312-linux_x86_64.whl\n|' requirements.txt
+
+# Clone custom nodes repository
+WORKDIR /dockerx/ComfyUI
+RUN git clone https://github.com/city96/ComfyUI-GGUF custom_nodes/ComfyUI-GGUF
+
+# Configure conda channels and install Python dependencies with pip, then purge pip cache
+RUN conda config --add channels defaults && \
+    conda run --no-capture-output -n comfyui pip install -r requirements.txt && \
+    conda run --no-capture-output -n comfyui pip install -r custom_nodes/ComfyUI-GGUF/requirements.txt && \
+    conda run --no-capture-output -n comfyui pip install onnxruntime onnxruntime-gpu && \
+    conda run --no-capture-output -n comfyui pip cache purge
+
+# Download additional model files
+RUN mkdir -p models/vae_approx && \
+    cd models/vae_approx && \
+    wget -c https://github.com/madebyollin/taesd/raw/main/taesd_decoder.pth && \
+    wget -c https://github.com/madebyollin/taesd/raw/main/taesdxl_decoder.pth
+
+# Set working directory to the ComfyUI repository, add and prepare the entrypoint script
+WORKDIR /dockerx/ComfyUI
+COPY run.sh .
 RUN chmod +x run.sh
 
 ENTRYPOINT ["./run.sh"]
