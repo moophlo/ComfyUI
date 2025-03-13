@@ -43,6 +43,8 @@ if [ -d /dockerx/ComfyUI/custom_nodes/ComfyUI-Manager ]; then
         git reset --hard origin/main	
 	cd -
 else
+  	git clone https://github.com/ltdrdata/ComfyUI-Manager.git /dockerx/ComfyUI/custom_nodes/ComfyUI-Manager
+fi
 if [ -d /dockerx/ComfyUI/custom_nodes/AIGODLIKE-ComfyUI-Studio ]; then
 	cd /dockerx/ComfyUI/custom_nodes/AIGODLIKE-ComfyUI-Studio
 	#git pull
