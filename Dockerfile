@@ -33,7 +33,7 @@ WORKDIR /dockerx/ComfyUI
 # Configure conda channels and install Python dependencies with pip, then purge pip cache
 RUN conda config --add channels defaults && \
     conda run --no-capture-output -n comfyui pip install -r requirements.txt && \
-    conda run --no-capture-output -n comfyui pip install -r custom_nodes/ComfyUI-GGUF/requirements.txt && \
+    #conda run --no-capture-output -n comfyui pip install -r custom_nodes/ComfyUI-GGUF/requirements.txt && \
     conda run --no-capture-output -n comfyui pip install onnxruntime onnxruntime-gpu evalidate && \
     conda config --add channels conda-forge && \
     conda config --set channel_priority strict && \
