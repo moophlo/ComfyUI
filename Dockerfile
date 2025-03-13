@@ -20,7 +20,8 @@ RUN git clone https://github.com/comfyanonymous/ComfyUI.git && \
     sed -i 's|^torch$|https://download.pytorch.org/whl/rocm6.2.4/torch-2.6.0%2Brocm6.2.4-cp312-cp312-manylinux_2_28_x86_64.whl|g' requirements.txt && \
     sed -i 's|^torchvision$|https://download.pytorch.org/whl/rocm6.2.4/torchvision-0.21.0%2Brocm6.2.4-cp312-cp312-linux_x86_64.whl|g' requirements.txt && \
     sed -i '1s|^|https://download.pytorch.org/whl/rocm6.2.4/torchaudio-2.6.0%2Brocm6.2.4-cp312-cp312-linux_x86_64.whl\n|' requirements.txt && \
-    sed -i '1s|^|https://download.pytorch.org/whl/pytorch_triton_rocm-3.2.0-cp312-cp312-linux_x86_64.whl\n|' requirements.txt
+    sed -i '1s|^|https://download.pytorch.org/whl/pytorch_triton_rocm-3.2.0-cp312-cp312-linux_x86_64.whl\n|' requirements.txt && \
+    git diff requirements.txt > custom_requirements.patch
 
 # Clone custom nodes repository
 WORKDIR /dockerx/ComfyUI

@@ -14,6 +14,7 @@ cd /dockerx/ComfyUI
 #git pull
 git fetch origin
 git reset --hard origin/master	
+patch -p1 < custom_requirements.patch
 
 if [ -d /dockerx/ComfyUI/custom_nodes/ComfyUI-GGUF ]; then
 	cd /dockerx/ComfyUI/custom_nodes/ComfyUI-GGUF
