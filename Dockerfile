@@ -34,7 +34,10 @@ RUN git clone https://github.com/city96/ComfyUI-GGUF.git custom_nodes/ComfyUI-GG
 RUN conda config --add channels defaults && \
     conda run --no-capture-output -n comfyui pip install -r requirements.txt && \
     conda run --no-capture-output -n comfyui pip install -r custom_nodes/ComfyUI-GGUF/requirements.txt && \
-    conda run --no-capture-output -n comfyui pip install onnxruntime onnxruntime-gpu && \
+    conda run --no-capture-output -n comfyui pip install onnxruntime onnxruntime-gpu evalidate && \
+    conda config --add channels conda-forge && \
+    conda config --set channel_priority strict && 
+    conda install -n comfyui gcc_linux-64 libgcc-ng libstdcxx-ng piexif deepdiff evaluate matplotlib opencv diffusers && \
     conda run --no-capture-output -n comfyui pip cache purge
 
 # Download additional model files
