@@ -7,8 +7,8 @@ else
 	#export COMMANDLINE_ARGS="--listen --force-fp32 --fp32-vae --fp32-text-enc --use-quad-cross-attention"
 fi
 
-mv /opt/conda/envs/comfyui/lib/python3.12/site-packages/torch/lib/libMIOpen.so /opt/conda/envs/comfyui/lib/python3.12/site-packages/torch/lib/libMIOpen.so_ORIG
-cp /opt/rocm/lib/libMIOpen.so.1.0.60304 /opt/conda/envs/comfyui/lib/python3.12/site-packages/torch/lib/libMIOpen.so
+#mv /opt/conda/envs/comfyui/lib/python3.12/site-packages/torch/lib/libMIOpen.so /opt/conda/envs/comfyui/lib/python3.12/site-packages/torch/lib/libMIOpen.so_ORIG
+#cp /opt/rocm/lib/libMIOpen.so.1.0.60304 /opt/conda/envs/comfyui/lib/python3.12/site-packages/torch/lib/libMIOpen.so
 
 cd /dockerx/ComfyUI
 #git pull
@@ -60,6 +60,7 @@ wget -c https://github.com/madebyollin/taesd/raw/main/taesd_decoder.pth
 wget -c https://github.com/madebyollin/taesd/raw/main/taesdxl_decoder.pth
 cd -
 
-conda install -y -n comfyui -c conda-forge gcc
+#conda install -y -n comfyui -c conda-forge gcc
 
-conda run --no-capture-output -n comfyui python main.py $COMMANDLINE_ARGS
+#conda run --no-capture-output -n comfyui python main.py $COMMANDLINE_ARGS
+python main.py $COMMANDLINE_ARGS
