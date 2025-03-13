@@ -1,0 +1,110 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "7"
+    field.cattle.io/publicEndpoints: '[{"nodeName":":diapolinux.mufloland.it","addresses":["31.215.72.232"],"port":8188,"protocol":"TCP","podName":"llm:comfyui-5dd9d79b84-9hscv","allNodes":false}]'
+  creationTimestamp: "2025-03-13T05:19:02Z"
+  generation: 19
+  labels:
+    app.kubernetes.io/instance: comfyui
+    app.kubernetes.io/name: comfyui
+    workload.user.cattle.io/workloadselector: apps.deployment-llm-comfyui
+  name: comfyui
+  namespace: llm
+  resourceVersion: "755342070"
+  uid: 47339244-ede3-4326-8431-b6bdbe8537ce
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      workload.user.cattle.io/workloadselector: apps.deployment-llm-comfyui
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: comfyui
+        app.kubernetes.io/name: comfyui
+        workload.user.cattle.io/workloadselector: apps.deployment-llm-comfyui
+      name: comfyui
+      namespace: llm
+    spec:
+      containers:
+      - env:
+        - name: HIP_VISIBLE_DEVICES
+          value: "1"
+        - name: COMMANDLINE_ARGS
+          value: --listen
+        - name: HSA_OVERRIDE_GFX_VERSION
+          value: 10.3.0
+        - name: TORCH_ROCM_AOTRITON_ENABLE_EXPERIMENTAL
+          value: "0"
+        - name: PYTORCH_TUNABLEOP_ENABLED
+          value: "0"
+        image: moophlo/comfyui
+        imagePullPolicy: Always
+        name: comfyui
+        ports:
+        - containerPort: 8188
+          name: 8188tcp
+          protocol: TCP
+        resources:
+          limits:
+            amd.com/gpu: "1"
+        securityContext:
+          capabilities:
+            add:
+            - SYS_PTRACE
+          privileged: true
+        stdin: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        tty: true
+        volumeMounts:
+        - mountPath: /dockerx/ComfyUI/models
+          name: comfyui-models
+        - mountPath: /dockerx/ComfyUI/custom_nodes
+          name: comfyui-custom-nodes
+      dnsConfig:
+        nameservers:
+        - 1.1.1.1
+      dnsPolicy: None
+      hostNetwork: true
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      tolerations:
+      - effect: NoSchedule
+        key: gpu
+        operator: Equal
+        value: "true"
+      volumes:
+      - name: comfyui-models
+        persistentVolumeClaim:
+          claimName: comfyui-models
+      - name: comfyui-custom-nodes
+        persistentVolumeClaim:
+          claimName: comfyui-custom-nodes
+status:
+  conditions:
+  - lastTransitionTime: "2025-03-13T05:19:02Z"
+    lastUpdateTime: "2025-03-13T05:49:19Z"
+    message: ReplicaSet "comfyui-7f56f888ff" has successfully progressed.
+    reason: NewReplicaSetAvailable
+    status: "True"
+    type: Progressing
+  - lastTransitionTime: "2025-03-13T06:04:24Z"
+    lastUpdateTime: "2025-03-13T06:04:24Z"
+    message: Deployment does not have minimum availability.
+    reason: MinimumReplicasUnavailable
+    status: "False"
+    type: Available
+  observedGeneration: 19
+  replicas: 1
+  unavailableReplicas: 1
+  updatedReplicas: 1

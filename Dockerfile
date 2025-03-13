@@ -24,7 +24,10 @@ RUN git clone https://github.com/comfyanonymous/ComfyUI.git && \
 
 # Clone custom nodes repository
 WORKDIR /dockerx/ComfyUI
-RUN git clone https://github.com/city96/ComfyUI-GGUF custom_nodes/ComfyUI-GGUF
+RUN git clone https://github.com/city96/ComfyUI-GGUF.git custom_nodes/ComfyUI-GGUF &&\
+    git clone https://github.com/Suzie1/ComfyUI_Comfyroll_CustomNodes.git custom_nodes/ComfyUI_Comfyroll_CustomNodes && \
+    git clone https://github.com/ltdrdata/ComfyUI-Manager.git custom_nodes/ComfyUI-Manager && \
+    git clone https://github.com/AIGODLIKE/AIGODLIKE-ComfyUI-Studio.git custom_nodes/AIGODLIKE-ComfyUI-Studio
 
 # Configure conda channels and install Python dependencies with pip, then purge pip cache
 RUN conda config --add channels defaults && \

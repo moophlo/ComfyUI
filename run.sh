@@ -8,7 +8,7 @@ else
 fi
 
 mv /opt/conda/envs/comfyui/lib/python3.12/site-packages/torch/lib/libMIOpen.so /opt/conda/envs/comfyui/lib/python3.12/site-packages/torch/lib/libMIOpen.so_ORIG
-cp /opt/rocm/lib/libMIOpen.so.1.0.60204 /opt/conda/envs/comfyui/lib/python3.12/site-packages/torch/lib/libMIOpen.so
+cp /opt/rocm/lib/libMIOpen.so.1.0.60304 /opt/conda/envs/comfyui/lib/python3.12/site-packages/torch/lib/libMIOpen.so
 
 cd /dockerx/ComfyUI
 #git pull
@@ -19,7 +19,7 @@ if [ -d /dockerx/ComfyUI/custom_nodes/ComfyUI-GGUF ]; then
 	cd /dockerx/ComfyUI/custom_nodes/ComfyUI-GGUF
 	#git pull
         git fetch origin
-        git reset --hard origin/master	
+        git reset --hard origin/main	
 	cd -
 else
 	git clone https://github.com/city96/ComfyUI-GGUF /dockerx/ComfyUI/custom_nodes/ComfyUI-GGUF
@@ -29,7 +29,7 @@ if [ -d /dockerx/ComfyUI/custom_nodes/ComfyUI_Comfyroll_CustomNodes ]; then
 	cd /dockerx/ComfyUI/custom_nodes/ComfyUI_Comfyroll_CustomNodes
 	#git pull
         git fetch origin
-        git reset --hard origin/master	
+        git reset --hard origin/main	
 	cd -
 else
 	git clone https://github.com/Suzie1/ComfyUI_Comfyroll_CustomNodes.git /dockerx/ComfyUI/custom_nodes/ComfyUI_Comfyroll_CustomNodes
@@ -39,10 +39,17 @@ if [ -d /dockerx/ComfyUI/custom_nodes/ComfyUI-Manager ]; then
 	cd /dockerx/ComfyUI/custom_nodes/ComfyUI-Manager
 	#git pull
         git fetch origin
-        git reset --hard origin/master	
+        git reset --hard origin/main	
 	cd -
 else
-	git clone https://github.com/ltdrdata/ComfyUI-Manager.git /dockerx/ComfyUI/custom_nodes/ComfyUI-Manager
+if [ -d /dockerx/ComfyUI/custom_nodes/AIGODLIKE-ComfyUI-Studio ]; then
+	cd /dockerx/ComfyUI/custom_nodes/AIGODLIKE-ComfyUI-Studio
+	#git pull
+        git fetch origin
+        git reset --hard origin/main	
+	cd -
+else
+	git clone https://github.com/ltdrdata/AIGODLIKE-ComfyUI-Studio.git /dockerx/ComfyUI/custom_nodes/AIGODLIKE-ComfyUI-Studio
 fi
 
 mkdir -p /dockerx/ComfyUI/models/vae_approx && cd /dockerx/ComfyUI/models/vae_approx
