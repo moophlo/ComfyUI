@@ -25,10 +25,10 @@ RUN git clone https://github.com/comfyanonymous/ComfyUI.git && \
 
 # Clone custom nodes repository
 WORKDIR /dockerx/ComfyUI
-RUN git clone https://github.com/city96/ComfyUI-GGUF.git custom_nodes/ComfyUI-GGUF &&\
-    git clone https://github.com/Suzie1/ComfyUI_Comfyroll_CustomNodes.git custom_nodes/ComfyUI_Comfyroll_CustomNodes && \
-    git clone https://github.com/ltdrdata/ComfyUI-Manager.git custom_nodes/ComfyUI-Manager && \
-    git clone https://github.com/AIGODLIKE/AIGODLIKE-ComfyUI-Studio.git custom_nodes/AIGODLIKE-ComfyUI-Studio
+#RUN git clone https://github.com/city96/ComfyUI-GGUF.git custom_nodes/ComfyUI-GGUF &&\
+#    git clone https://github.com/Suzie1/ComfyUI_Comfyroll_CustomNodes.git custom_nodes/ComfyUI_Comfyroll_CustomNodes && \
+#    git clone https://github.com/ltdrdata/ComfyUI-Manager.git custom_nodes/ComfyUI-Manager && \
+#    git clone https://github.com/AIGODLIKE/AIGODLIKE-ComfyUI-Studio.git custom_nodes/AIGODLIKE-ComfyUI-Studio
 
 # Configure conda channels and install Python dependencies with pip, then purge pip cache
 RUN conda config --add channels defaults && \
@@ -36,15 +36,15 @@ RUN conda config --add channels defaults && \
     conda run --no-capture-output -n comfyui pip install -r custom_nodes/ComfyUI-GGUF/requirements.txt && \
     conda run --no-capture-output -n comfyui pip install onnxruntime onnxruntime-gpu evalidate && \
     conda config --add channels conda-forge && \
-    conda config --set channel_priority strict && 
-    conda install -n comfyui gcc_linux-64 libgcc-ng libstdcxx-ng piexif deepdiff evaluate matplotlib opencv diffusers && \
+    conda config --set channel_priority strict && \
+    conda run --no-capture-output -n comfyui pip install gcc_linux-64 libgcc-ng libstdcxx-ng piexif deepdiff evaluate matplotlib opencv diffusers && \
     conda run --no-capture-output -n comfyui pip cache purge
 
 # Download additional model files
-RUN mkdir -p models/vae_approx && \
-    cd models/vae_approx && \
-    wget -c https://github.com/madebyollin/taesd/raw/main/taesd_decoder.pth && \
-    wget -c https://github.com/madebyollin/taesd/raw/main/taesdxl_decoder.pth
+#RUN mkdir -p models/vae_approx && \
+#    cd models/vae_approx && \
+#    wget -c https://github.com/madebyollin/taesd/raw/main/taesd_decoder.pth && \
+#    wget -c https://github.com/madebyollin/taesd/raw/main/taesdxl_decoder.pth
 
 # Set working directory to the ComfyUI repository, add and prepare the entrypoint script
 WORKDIR /dockerx/ComfyUI
