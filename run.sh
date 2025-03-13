@@ -52,7 +52,7 @@ if [ -d /dockerx/ComfyUI/custom_nodes/AIGODLIKE-ComfyUI-Studio ]; then
         git reset --hard origin/main	
 	cd -
 else
-	git clone https://github.com/ltdrdata/AIGODLIKE-ComfyUI-Studio.git /dockerx/ComfyUI/custom_nodes/AIGODLIKE-ComfyUI-Studio
+	git clone https://github.com/AIGODLIKE/AIGODLIKE-ComfyUI-Studio.git /dockerx/ComfyUI/custom_nodes/AIGODLIKE-ComfyUI-Studio
 fi
 
 mkdir -p /dockerx/ComfyUI/models/vae_approx && cd /dockerx/ComfyUI/models/vae_approx
