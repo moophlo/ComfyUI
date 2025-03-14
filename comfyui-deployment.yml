@@ -2,18 +2,12 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
-    deployment.kubernetes.io/revision: "7"
-    field.cattle.io/publicEndpoints: '[{"nodeName":":diapolinux.mufloland.it","addresses":["31.215.72.232"],"port":8188,"protocol":"TCP","podName":"llm:comfyui-5dd9d79b84-9hscv","allNodes":false}]'
-  creationTimestamp: "2025-03-13T05:19:02Z"
-  generation: 19
   labels:
     app.kubernetes.io/instance: comfyui
     app.kubernetes.io/name: comfyui
     workload.user.cattle.io/workloadselector: apps.deployment-llm-comfyui
   name: comfyui
   namespace: llm
-  resourceVersion: "755342070"
-  uid: 47339244-ede3-4326-8431-b6bdbe8537ce
 spec:
   progressDeadlineSeconds: 600
   replicas: 1
@@ -45,6 +39,8 @@ spec:
           value: "0"
         - name: PYTORCH_TUNABLEOP_ENABLED
           value: "0"
+        - name: PYTORCH_ROCM_ARCH
+          value: "gfx1030"
         image: moophlo/comfyui
         imagePullPolicy: Always
         name: comfyui
@@ -90,21 +86,3 @@ spec:
       - name: comfyui-custom-nodes
         persistentVolumeClaim:
           claimName: comfyui-custom-nodes
-status:
-  conditions:
-  - lastTransitionTime: "2025-03-13T05:19:02Z"
-    lastUpdateTime: "2025-03-13T05:49:19Z"
-    message: ReplicaSet "comfyui-7f56f888ff" has successfully progressed.
-    reason: NewReplicaSetAvailable
-    status: "True"
-    type: Progressing
-  - lastTransitionTime: "2025-03-13T06:04:24Z"
-    lastUpdateTime: "2025-03-13T06:04:24Z"
-    message: Deployment does not have minimum availability.
-    reason: MinimumReplicasUnavailable
-    status: "False"
-    type: Available
-  observedGeneration: 19
-  replicas: 1
-  unavailableReplicas: 1
-  updatedReplicas: 1

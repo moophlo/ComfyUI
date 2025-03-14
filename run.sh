@@ -4,14 +4,10 @@ if [ -n "$COMMANDLINE_ARGS" ]; then
 	export COMMANDLINE_ARGS=$COMMANDLINE_ARGS
 else
 	export COMMANDLINE_ARGS="--listen --front-end-version Comfy-Org/ComfyUI_frontend@latest --use-split-cross-attention --reserve-vram 6"
-	#export COMMANDLINE_ARGS="--listen --force-fp32 --fp32-vae --fp32-text-enc --use-quad-cross-attention"
 fi
 
-#mv /opt/conda/envs/comfyui/lib/python3.12/site-packages/torch/lib/libMIOpen.so /opt/conda/envs/comfyui/lib/python3.12/site-packages/torch/lib/libMIOpen.so_ORIG
-#cp /opt/rocm/lib/libMIOpen.so.1.0.60304 /opt/conda/envs/comfyui/lib/python3.12/site-packages/torch/lib/libMIOpen.so
-
+# Update the main repository, patch it, and install its requirements
 cd /dockerx/ComfyUI
-#git pull
 git fetch origin
 git reset --hard origin/master	
 patch -p1 < custom_requirements.patch
@@ -29,18 +25,6 @@ else
   pip install -r /dockerx/ComfyUI/custom_nodes/ComfyUI-GGUF/requirements.txt
 fi
 
-if [ -d /dockerx/ComfyUI/custom_nodes/ComfyUI_Comfyroll_CustomNodes ]; then
-	cd /dockerx/ComfyUI/custom_nodes/ComfyUI_Comfyroll_CustomNodes
-	#git pull
-        git fetch origin
-        git reset --hard origin/main	
-        pip install -r /dockerx/ComfyUI/custom_nodes/ComfyUI_Comfyroll_CustomNodes/requirements.txt
-	cd -
-else
-	git clone https://github.com/Suzie1/ComfyUI_Comfyroll_CustomNodes.git /dockerx/ComfyUI/custom_nodes/ComfyUI_Comfyroll_CustomNodes
-  pip install -r /dockerx/ComfyUI/custom_nodes/ComfyUI_Comfyroll_CustomNodes/requirements.txt
-fi
-
 if [ -d /dockerx/ComfyUI/custom_nodes/ComfyUI-Manager ]; then
 	cd /dockerx/ComfyUI/custom_nodes/ComfyUI-Manager
 	#git pull
@@ -52,24 +36,38 @@ else
   git clone https://github.com/ltdrdata/ComfyUI-Manager.git /dockerx/ComfyUI/custom_nodes/ComfyUI-Manager
   pip install -r /dockerx/ComfyUI/custom_nodes/ComfyUI-Manager/requirements.txt
 fi
-if [ -d /dockerx/ComfyUI/custom_nodes/AIGODLIKE-ComfyUI-Studio ]; then
-	cd /dockerx/ComfyUI/custom_nodes/AIGODLIKE-ComfyUI-Studio
-	#git pull
-        git fetch origin
-        git reset --hard origin/main	
-        pip install -r /dockerx/ComfyUI/custom_nodes/AIGODLIKE-ComfyUI-Studio/requirements.txt
-	cd -
-else
-	git clone https://github.com/AIGODLIKE/AIGODLIKE-ComfyUI-Studio.git /dockerx/ComfyUI/custom_nodes/AIGODLIKE-ComfyUI-Studio
-  pip install -r /dockerx/ComfyUI/custom_nodes/AIGODLIKE-ComfyUI-Studio/requirements.txt
+
+# If EXTRA_CUSTOM_NODES is set and not empty, process each repository
+if [ -n "$EXTRA_CUSTOM_NODES" ]; then
+    mkdir -p /dockerx/ComfyUI/custom_nodes
+    for repo in $EXTRA_CUSTOM_NODES; do
+        # Derive the custom node directory name from the Git URL.
+        custom_dir=$(basename "$repo")
+        custom_dir=${custom_dir%.git}
+        custom_path="/dockerx/ComfyUI/custom_nodes/$custom_dir"
+
+        if [ -d "$custom_path" ]; then
+            cd "$custom_path"
+            git fetch origin
+            git reset --hard origin/main
+            [ -f requirements.txt ] && pip install -r requirements.txt
+            cd -
+        else
+            git clone "$repo" "$custom_path"
+            [ -f "$custom_path/requirements.txt" ] && pip install -r "$custom_path/requirements.txt"
+        fi
+    done
 fi
 
+# Download additional model files if they are not already present
 mkdir -p /dockerx/ComfyUI/models/vae_approx && cd /dockerx/ComfyUI/models/vae_approx
-wget -c https://github.com/madebyollin/taesd/raw/main/taesd_decoder.pth
-wget -c https://github.com/madebyollin/taesd/raw/main/taesdxl_decoder.pth
+if [ ! -f taesd_decoder.pth ]; then
+    wget -c https://github.com/madebyollin/taesd/raw/main/taesd_decoder.pth
+fi
+
+if [ ! -f taesdxl_decoder.pth ]; then
+    wget -c https://github.com/madebyollin/taesd/raw/main/taesdxl_decoder.pth
+fi
 cd -
 
-#conda install -y -n comfyui -c conda-forge gcc
-
-#conda run --no-capture-output -n comfyui python main.py $COMMANDLINE_ARGS
 python main.py $COMMANDLINE_ARGS
