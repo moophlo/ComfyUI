@@ -37,11 +37,14 @@ else
   pip install -r /dockerx/ComfyUI/custom_nodes/ComfyUI-Manager/requirements.txt
 fi
 
-# If EXTRA_CUSTOM_NODES is set and not empty, process each repository
+# Process extra custom node repositories if provided.
+# EXTRA_CUSTOM_NODES can be a comma or semicolon separated list of Git URLs.
 if [ -n "$EXTRA_CUSTOM_NODES" ]; then
     mkdir -p /dockerx/ComfyUI/custom_nodes
-    for repo in $EXTRA_CUSTOM_NODES; do
-        # Derive the custom node directory name from the Git URL.
+    # Split the EXTRA_CUSTOM_NODES variable on comma and semicolon
+    IFS=',;' read -ra repo_list <<< "$EXTRA_CUSTOM_NODES"
+    for repo in "${repo_list[@]}"; do
+        # Derive the custom node directory name from the Git URL by taking the basename and stripping .git if present.
         custom_dir=$(basename "$repo")
         custom_dir=${custom_dir%.git}
         custom_path="/dockerx/ComfyUI/custom_nodes/$custom_dir"
