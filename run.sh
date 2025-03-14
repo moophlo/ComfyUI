@@ -15,15 +15,18 @@ cd /dockerx/ComfyUI
 git fetch origin
 git reset --hard origin/master	
 patch -p1 < custom_requirements.patch
+pip install -r requirements.txt
 
 if [ -d /dockerx/ComfyUI/custom_nodes/ComfyUI-GGUF ]; then
 	cd /dockerx/ComfyUI/custom_nodes/ComfyUI-GGUF
 	#git pull
         git fetch origin
         git reset --hard origin/main	
+        pip install -r /dockerx/ComfyUI/custom_nodes/ComfyUI-GGUF/requirements.txt
 	cd -
 else
 	git clone https://github.com/city96/ComfyUI-GGUF /dockerx/ComfyUI/custom_nodes/ComfyUI-GGUF
+  pip install -r /dockerx/ComfyUI/custom_nodes/ComfyUI-GGUF/requirements.txt
 fi
 
 if [ -d /dockerx/ComfyUI/custom_nodes/ComfyUI_Comfyroll_CustomNodes ]; then
@@ -31,9 +34,11 @@ if [ -d /dockerx/ComfyUI/custom_nodes/ComfyUI_Comfyroll_CustomNodes ]; then
 	#git pull
         git fetch origin
         git reset --hard origin/main	
+        pip install -r /dockerx/ComfyUI/custom_nodes/ComfyUI_Comfyroll_CustomNodes/requirements.txt
 	cd -
 else
 	git clone https://github.com/Suzie1/ComfyUI_Comfyroll_CustomNodes.git /dockerx/ComfyUI/custom_nodes/ComfyUI_Comfyroll_CustomNodes
+  pip install -r /dockerx/ComfyUI/custom_nodes/ComfyUI_Comfyroll_CustomNodes/requirements.txt
 fi
 
 if [ -d /dockerx/ComfyUI/custom_nodes/ComfyUI-Manager ]; then
@@ -41,18 +46,22 @@ if [ -d /dockerx/ComfyUI/custom_nodes/ComfyUI-Manager ]; then
 	#git pull
         git fetch origin
         git reset --hard origin/main	
+        pip install -r /dockerx/ComfyUI/custom_nodes/ComfyUI-Manager/requirements.txt
 	cd -
 else
-  	git clone https://github.com/ltdrdata/ComfyUI-Manager.git /dockerx/ComfyUI/custom_nodes/ComfyUI-Manager
+  git clone https://github.com/ltdrdata/ComfyUI-Manager.git /dockerx/ComfyUI/custom_nodes/ComfyUI-Manager
+  pip install -r /dockerx/ComfyUI/custom_nodes/ComfyUI-Manager/requirements.txt
 fi
 if [ -d /dockerx/ComfyUI/custom_nodes/AIGODLIKE-ComfyUI-Studio ]; then
 	cd /dockerx/ComfyUI/custom_nodes/AIGODLIKE-ComfyUI-Studio
 	#git pull
         git fetch origin
         git reset --hard origin/main	
+        pip install -r /dockerx/ComfyUI/custom_nodes/AIGODLIKE-ComfyUI-Studio/requirements.txt
 	cd -
 else
 	git clone https://github.com/AIGODLIKE/AIGODLIKE-ComfyUI-Studio.git /dockerx/ComfyUI/custom_nodes/AIGODLIKE-ComfyUI-Studio
+  pip install -r /dockerx/ComfyUI/custom_nodes/AIGODLIKE-ComfyUI-Studio/requirements.txt
 fi
 
 mkdir -p /dockerx/ComfyUI/models/vae_approx && cd /dockerx/ComfyUI/models/vae_approx
