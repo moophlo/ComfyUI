@@ -63,6 +63,8 @@ spec:
         volumeMounts:
         - mountPath: /dockerx/ComfyUI/models
           name: comfyui-models
+        - mountPath: /dockerx/ComfyUI/output
+          name: comfyui-output
         - mountPath: /dockerx/ComfyUI/custom_nodes
           name: comfyui-custom-nodes
       dnsConfig:
@@ -83,6 +85,9 @@ spec:
       - name: comfyui-models
         persistentVolumeClaim:
           claimName: comfyui-models
+      - name: comfyui-output
+        persistentVolumeClaim:
+          claimName: comfyui-output
       - name: comfyui-custom-nodes
         persistentVolumeClaim:
           claimName: comfyui-custom-nodes
