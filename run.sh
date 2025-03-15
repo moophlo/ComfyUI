@@ -10,7 +10,7 @@ fi
 cd /dockerx/ComfyUI
 git fetch origin
 git reset --hard origin/master	
-patch -p1 < custom_requirements.patch
+patch -F 3 -p1 < custom_requirements.patch
 pip install -r requirements.txt
 
 if [ -d /dockerx/ComfyUI/custom_nodes/ComfyUI-GGUF ]; then
@@ -59,6 +59,15 @@ if [ -n "$EXTRA_CUSTOM_NODES" ]; then
             git clone "$repo" "$custom_path"
             [ -f "$custom_path/requirements.txt" ] && pip install -r "$custom_path/requirements.txt"
         fi
+    done
+fi
+
+# Install extra pip packages if specified.
+# EXTRA_PIP_PACKAGES can be a comma or semicolon separated list.
+if [ -n "$EXTRA_PIP_PACKAGES" ]; then
+    IFS=',;' read -ra pkg_list <<< "$EXTRA_PIP_PACKAGES"
+    for pkg in "${pkg_list[@]}"; do
+        pip install "$pkg"
     done
 fi
 
