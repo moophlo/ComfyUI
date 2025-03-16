@@ -1,6 +1,11 @@
 ## [Unreleased]
 
 ### Added
+Added a loop to the run.sh script that uses the `find` command to recursively search for
+`requirements.txt` files in all subdirectories of /dockerx/ComfyUI/custom_nodes/. Each file
+found is then processed with pip to install any listed dependencies.
+
+### Added
 - Extracted the base image tag from the Dockerfile’s FROM line and added it as an additional image tag during the push. This allows tracking of the underlying base image version used in the build.
 
 ### Added

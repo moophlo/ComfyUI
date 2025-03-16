@@ -37,6 +37,13 @@ else
   pip install -r /dockerx/ComfyUI/custom_nodes/ComfyUI-Manager/requirements.txt
 fi
 
+echo "Installing additional requirements from custom_nodes..."
+# Use find to look for requirements.txt files under custom_nodes
+find /dockerx/ComfyUI/custom_nodes/ -type f -name "requirements.txt" | while read req; do
+    echo "Installing requirements from $req"
+    pip install -r "$req"
+done
+
 # Process extra custom node repositories if provided.
 # EXTRA_CUSTOM_NODES can be a comma or semicolon separated list of Git URLs.
 if [ -n "$EXTRA_CUSTOM_NODES" ]; then
