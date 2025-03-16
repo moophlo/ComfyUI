@@ -91,3 +91,111 @@ spec:
       - name: comfyui-custom-nodes
         persistentVolumeClaim:
           claimName: comfyui-custom-nodes
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: comfyui-models
+  namespace: llm
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 500Gi
+  storageClassName: manual
+  volumeMode: Filesystem
+  volumeName: comfyui-models
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: comfyui-custom-nodes
+  namespace: llm
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: manual
+  volumeMode: Filesystem
+  volumeName: comfyui-custom-nodes
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: comfyui-output
+  namespace: llm
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 500Gi
+  storageClassName: manual
+  volumeMode: Filesystem
+  volumeName: comfyui-output
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: comfyui-models
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 500Gi
+  claimRef:
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: comfyui-models
+    namespace: llm
+  hostPath:
+    path: /media/muflo/Volume10TB/AI/kube-comfyui-models
+    type: ""
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+  volumeMode: Filesystem
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: comfyui-custom-nodes
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 5Gi
+  claimRef:
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: comfyui-custom-nodes
+    namespace: llm
+  hostPath:
+    path: /media/muflo/Volume10TB/AI/kube-comfyui-custom-nodes
+    type: ""
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+  volumeMode: Filesystem
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: comfyui-output
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 500Gi
+  claimRef:
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: comfyui-output
+    namespace: llm
+  hostPath:
+    path: /media/muflo/Volume10TB/AI/kube-comfyui-output
+    type: ""
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+  volumeMode: Filesystem
