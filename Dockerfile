@@ -1,5 +1,5 @@
 FROM rocm/pytorch:rocm6.3.4_ubuntu24.04_py3.12_pytorch_release_2.4.0
-
+USER root
 # Set working directory for initial operations
 WORKDIR /dockerx
 
@@ -18,6 +18,7 @@ RUN patch -F 3 -p1 < custom_requirements.patch
 RUN pip install -r requirements.txt
 
 # Set working directory to the ComfyUI repository, add and prepare the entrypoint script
+RUN chown -R root:root /root
 COPY run.sh .
 RUN chmod +x run.sh
 
