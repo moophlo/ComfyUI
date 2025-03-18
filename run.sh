@@ -37,6 +37,18 @@ else
   pip install -r /dockerx/ComfyUI/custom_nodes/ComfyUI-Manager/requirements.txt
 fi
 
+if [ -d /dockerx/ComfyUI/custom_nodes/ComfyUI-Crystools ]; then
+	cd /dockerx/ComfyUI/custom_nodes/ComfyUI-Crystools
+	#git pull
+        git fetch origin
+        git reset --hard origin/AMD	
+        pip install -r /dockerx/ComfyUI/custom_nodes/ComfyUI-Crystools/requirements.txt
+	cd -
+else
+  git clone -b AMD https://github.com/crystian/ComfyUI-Crystools.git /dockerx/ComfyUI/custom_nodes/ComfyUI-Crystools
+  pip install -r /dockerx/ComfyUI/custom_nodes/ComfyUI-Crystools/requirements.txt
+fi
+
 echo "Installing additional requirements from custom_nodes..."
 # Use find to look for requirements.txt files under custom_nodes
 find /dockerx/ComfyUI/custom_nodes/ -type f -name "requirements.txt" | while read req; do

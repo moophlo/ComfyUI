@@ -17,8 +17,9 @@ COPY custom_requirements.patch .
 RUN patch -F 3 -p1 < custom_requirements.patch
 RUN pip install -r requirements.txt
 
-# Set working directory to the ComfyUI repository, add and prepare the entrypoint script
 RUN chown -R root:root /root
+
+# Set working directory to the ComfyUI repository, add and prepare the entrypoint script
 COPY run.sh .
 RUN chmod +x run.sh
 
