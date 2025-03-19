@@ -34,7 +34,7 @@ spec:
         - name: COMMANDLINE_ARGS
           value: --listen --use-pytorch-cross-attention
         - name: HSA_OVERRIDE_GFX_VERSION
-          value: 11.0.0
+          value: 11.0.2
         - name: TORCH_ROCM_AOTRITON_ENABLE_EXPERIMENTAL
           value: "0"
         - name: PYTORCH_TUNABLEOP_ENABLED
