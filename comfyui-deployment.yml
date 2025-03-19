@@ -34,13 +34,13 @@ spec:
         - name: COMMANDLINE_ARGS
           value: --listen
         - name: HSA_OVERRIDE_GFX_VERSION
-          value: 11.0.2
+          value: 11.0.0
         - name: TORCH_ROCM_AOTRITON_ENABLE_EXPERIMENTAL
           value: "1"
         - name: PYTORCH_TUNABLEOP_ENABLED
           value: "1"
         - name: PYTORCH_ROCM_ARCH
-          value: "gfx1102"
+          value: "gfx1100"
         - name: PYTORCH_HIP_ALLOC_CONF
           value: >-
             garbage_collection_threshold:0.2,max_split_size_mb:2048,expandable_segments:False
