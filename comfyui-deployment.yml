@@ -30,11 +30,11 @@ spec:
       containers:
       - env:
         - name: HIP_VISIBLE_DEVICES
-          value: "1"
+          value: "0"
         - name: COMMANDLINE_ARGS
           value: --listen --use-pytorch-cross-attention
         - name: HSA_OVERRIDE_GFX_VERSION
-          value: 10.3.0
+          value: 11.0.0
         - name: TORCH_ROCM_AOTRITON_ENABLE_EXPERIMENTAL
           value: "0"
         - name: PYTORCH_TUNABLEOP_ENABLED
