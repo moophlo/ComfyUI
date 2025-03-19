@@ -32,7 +32,7 @@ spec:
         - name: HIP_VISIBLE_DEVICES
           value: "0"
         - name: COMMANDLINE_ARGS
-          value: --listen
+          value: --listen --use-pytorch-cross-attention
         - name: HSA_OVERRIDE_GFX_VERSION
           value: 11.0.0
         - name: TORCH_ROCM_AOTRITON_ENABLE_EXPERIMENTAL
