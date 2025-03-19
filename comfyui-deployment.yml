@@ -36,11 +36,11 @@ spec:
         - name: HSA_OVERRIDE_GFX_VERSION
           value: 11.0.2
         - name: TORCH_ROCM_AOTRITON_ENABLE_EXPERIMENTAL
-          value: "0"
+          value: "1"
         - name: PYTORCH_TUNABLEOP_ENABLED
-          value: "0"
+          value: "1"
         - name: PYTORCH_ROCM_ARCH
-          value: "gfx1030"
+          value: "gfx1102"
         - name: PYTORCH_HIP_ALLOC_CONF
           value: >-
             garbage_collection_threshold:0.2,max_split_size_mb:2048,expandable_segments:False
