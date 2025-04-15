@@ -73,8 +73,7 @@ spec:
         - mountPath: /dockerx/ComfyUI/custom_nodes
           name: comfyui-custom-nodes
         - name: login
-          mountPath: /dockerx/ComfyUI/login/PASSWORD
-          subPath: PASSWORD
+          mountPath: /dockerx/ComfyUI/login
       dnsConfig:
         nameservers:
         - 1.1.1.1
@@ -102,10 +101,9 @@ spec:
       - name: comfyui-custom-nodes
         persistentVolumeClaim:
           claimName: comfyui-custom-nodes
-      - configMap:
-          defaultMode: 511
-          name: comfyui-login
-        name: login
+      - name: login
+        persistentVolumeClaim:
+          claimName: comfyui-login
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -147,7 +145,7 @@ spec:
   - ReadWriteOnce
   resources:
     requests:
-      storage: 500Gi
+      storage: 50Gi
   storageClassName: manual
   volumeMode: Filesystem
   volumeName: comfyui-output
@@ -162,10 +160,25 @@ spec:
   - ReadWriteOnce
   resources:
     requests:
-      storage: 500Gi
+      storage: 1Gi
   storageClassName: manual
   volumeMode: Filesystem
   volumeName: comfyui-workflows
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: comfyui-login
+  namespace: llm
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: manual
+  volumeMode: Filesystem
+  volumeName: comfyui-login
 ---
 apiVersion: v1
 kind: PersistentVolume
@@ -217,7 +230,7 @@ spec:
   accessModes:
   - ReadWriteOnce
   capacity:
-    storage: 500Gi
+    storage: 50Gi
   claimRef:
     apiVersion: v1
     kind: PersistentVolumeClaim
@@ -238,7 +251,7 @@ spec:
   accessModes:
   - ReadWriteOnce
   capacity:
-    storage: 500Gi
+    storage: 1Gi
   claimRef:
     apiVersion: v1
     kind: PersistentVolumeClaim
@@ -252,9 +265,22 @@ spec:
   volumeMode: Filesystem
 ---
 apiVersion: v1
-data:
-  PASSWORD: $2b$12$HjzRS5jJlvac/pA0f5n6d.yAhDrHOi805z72la7qSbPMafzFv1zCW
-kind: ConfigMap
+kind: PersistentVolume
 metadata:
   name: comfyui-login
-  namespace: llm
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 1Gi
+  claimRef:
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: comfyui-login
+    namespace: llm
+  hostPath:
+    path: /media/muflo/Volume10TB/AI/kube-comfyui-login
+    type: ""
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+  volumeMode: Filesystem
