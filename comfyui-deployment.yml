@@ -38,7 +38,7 @@ spec:
         - name: TORCH_ROCM_AOTRITON_ENABLE_EXPERIMENTAL
           value: "1"
         - name: PYTORCH_TUNABLEOP_ENABLED
-          value: "1"
+          value: "0"
         - name: PYTORCH_ROCM_ARCH
           value: "gfx1030"
         - name: PYTORCH_HIP_ALLOC_CONF
