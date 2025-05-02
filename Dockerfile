@@ -23,7 +23,7 @@ RUN git clone https://github.com/comfyanonymous/ComfyUI.git
 WORKDIR /dockerx/ComfyUI
 COPY custom_requirements.patch .
 RUN patch -F 3 -p1 < custom_requirements.patch
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install -r requirements.txt
 
 # Build and install ROCm Flash-Attention from source
 WORKDIR /dockerx
