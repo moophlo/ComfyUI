@@ -2,14 +2,14 @@
 +++ b/requirements.txt
 @@ -2,1 +2,1 @@
 -torch
-+https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4/torch-2.6.0%2Brocm6.4.0.git2fb0ac2b-cp312-cp312-linux_x86_64.whl
++https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4.1/torch-2.7.1%2Brocm6.4.1.git2a215e4a-cp312-cp312-linux_x86_64.whl
 @@ -4,1 +4,1 @@
 -torchvision
-+https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4/torchvision-0.21.0%2Brocm6.4.0.git4040d51f-cp312-cp312-linux_x86_64.whl
++https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4.1/torchvision-0.22.1%2Brocm6.4.1.git59a3e1f9-cp312-cp312-linux_x86_64.whl
 @@ -5,1 +5,1 @@
 -torchaudio
-+https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4/torchaudio-2.6.0%2Brocm6.4.0.gitd8831425-cp312-cp312-linux_x86_64.whl
++https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4.1/torchaudio-2.7.1%2Brocm6.4.1.git95c61b41-cp312-cp312-linux_x86_64.whl
 @@ -6,0 +6,3 @@
-+https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4/pytorch_triton_rocm-3.2.0%2Brocm6.4.0.git6da9e660-cp312-cp312-linux_x86_64.whl
-+https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4/onnxruntime_rocm-1.21.0-cp312-cp312-linux_x86_64.whl
-+https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4/apex-1.6.0%2Brocm6.4.0.git69ee42b2-cp312-cp312-linux_x86_64.whl
++https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4.1/pytorch_triton_rocm-3.3.1%2Brocm6.4.1.git40e90a0a-cp312-cp312-linux_x86_64.whl
++https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4.1/onnxruntime_rocm-1.21.0-cp312-cp312-manylinux_2_28_x86_64.whl
++https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4.1/apex-1.7.0a0%2Brocm6.4.1.gita6c33a13-cp312-cp312-linux_x86_64.whl
