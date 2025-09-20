@@ -46,7 +46,9 @@ if [ -d /dockerx/ComfyUI/custom_nodes/ComfyUI-Crystools ]; then
 	cd -
 else
   git clone -b AMD https://github.com/crystian/ComfyUI-Crystools.git /dockerx/ComfyUI/custom_nodes/ComfyUI-Crystools
+  echo "numpy==2.0.2" >>  /dockerx/ComfyUI/custom_nodes/ComfyUI-Crystools/requirements.txt
   pip install -r /dockerx/ComfyUI/custom_nodes/ComfyUI-Crystools/requirements.txt
+  pip install --no-cache-dir --no-deps --force-reinstall "pandas==2.2.3"
 fi
 
 echo "Installing additional requirements from custom_nodes..."
