@@ -4,6 +4,9 @@ FROM rocm/pytorch:rocm7.0_ubuntu24.04_py3.12_pytorch_release_2.8.0
 USER root
 WORKDIR /dockerx
 
+# Clone ComfyUI and install its requirements
+RUN git clone https://github.com/comfyanonymous/ComfyUI.git
+
 # System update and base packages
 RUN apt update && apt full-upgrade -y && \
     apt install -y \
@@ -19,8 +22,6 @@ RUN apt update && apt full-upgrade -y && \
       rocm-dev && \
     apt autoclean -y && rm -rf /var/lib/apt/lists/*
 
-# Clone ComfyUI and install its requirements
-RUN git clone https://github.com/comfyanonymous/ComfyUI.git
 WORKDIR /dockerx/ComfyUI
 COPY custom_requirements.patch .
 RUN patch -F 3 -p1 < custom_requirements.patch
