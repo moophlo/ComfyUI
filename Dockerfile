@@ -38,7 +38,6 @@ RUN set -eu; \
     echo 'https://repo.radeon.com/rocm/manylinux/rocm-rel-7.0/apex-1.8.0a0%2Brocm7.0.0.git3f26640c-cp312-cp312-linux_x86_64.whl'; \
     echo 'https://repo.radeon.com/rocm/manylinux/rocm-rel-7.0/jax_rocm7_plugin-0.6.0-cp312-cp312-manylinux_2_28_x86_64.whl'; \
     echo 'https://repo.radeon.com/rocm/manylinux/rocm-rel-7.0/tensorflow_rocm-2.19.0-cp312-cp312-manylinux_2_28_x86_64.whl'; \
-    echo 'flash-attn'; \
     echo 'hiredis'; \
     echo 'PyOpenGL-accelerate'; \
     echo 'sageattention'; \
@@ -48,6 +47,8 @@ RUN set -eu; \
 
 
 RUN pip install -r requirements.txt
+
+RUN pip install --no-cache-dir flash-attn
 
 # Build and install ROCm Flash-Attention from source
 WORKDIR /dockerx
