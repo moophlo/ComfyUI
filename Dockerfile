@@ -49,18 +49,9 @@ RUN set -eu; \
 
 RUN pip install -r requirements.txt
 
-RUN pip install --no-cache-dir flash-attn
 
 # Build and install ROCm Flash-Attention from source
 WORKDIR /dockerx
-
-# install flash attention
-ENV FLASH_ATTENTION_TRITON_AMD_ENABLE="TRUE"
-
-RUN git clone https://github.com/ROCm/flash-attention.git &&\ 
-    cd flash-attention &&\
-    git checkout main_perf &&\
-    python setup.py install
 
 # Fix permissions
 RUN chown -R root:root /root

@@ -1,5 +1,7 @@
 #!/bin/bash -x
 
+export FLASH_ATTENTION_TRITON_AMD_ENABLE="TRUE"
+
 if [ -n "$COMMANDLINE_ARGS" ]; then
 	export COMMANDLINE_ARGS=$COMMANDLINE_ARGS
 else
@@ -102,5 +104,7 @@ if [ ! -f taesdxl_decoder.pth ]; then
     wget -c https://github.com/madebyollin/taesd/raw/main/taesdxl_decoder.pth
 fi
 cd -
+
+pip install --no-build-isolation --no-cache-dir flash-attn
 
 python main.py $COMMANDLINE_ARGS
