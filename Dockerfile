@@ -24,17 +24,15 @@ RUN apt update && apt full-upgrade -y && \
 
 WORKDIR /dockerx/ComfyUI
 COPY custom_requirements.patch .
-RUN set -Eeuo pipefail; f=requirements.txt; \
-    # Normalize endings
-    sed -i 's/\r$//' "$f"; \
-    # Replace *exact* names only (won't touch torchsde)
-    sed -ri 's|^torch$|https://repo.radeon.com/rocm/manylinux/rocm-rel-7.0/torch-2.8.0%2Brocm7.0.0.git64359f59-cp312-cp312-linux_x86_64.whl|' "$f"; \
-    sed -ri 's|^torchvision$|https://repo.radeon.com/rocm/manylinux/rocm-rel-7.0/torchvision-0.24.0%2Brocm7.0.0.gitf52c4f1a-cp312-cp312-linux_x86_64.whl|' "$f"; \
-    sed -ri 's|^torchaudio$|https://repo.radeon.com/rocm/manylinux/rocm-rel-7.0/torchaudio-2.8.0%2Brocm7.0.0.git6e1c7fe9-cp312-cp312-linux_x86_64.whl|' "$f"; \
-    # Drop previous ROCm extra lines to avoid duplicates
-    sed -ri '/repo\.radeon\.com\/rocm\/manylinux\/rocm-rel-7\.0\/(pytorch_triton_rocm|onnxruntime_rocm|apex-|jax_rocm7_plugin|tensorflow_rocm)/d' "$f"; \
-    # Append extras at the end (order not critical)
-    cat >> "$f" <<'EOF'
+RUN <<'SH'
+set -Eeuo pipefail
+f=requirements.txt
+sed -i 's/\r$//' "$f"
+sed -ri 's|^torch$|https://repo.radeon.com/rocm/manylinux/rocm-rel-7.0/torch-2.8.0%2Brocm7.0.0.git64359f59-cp312-cp312-linux_x86_64.whl|' "$f"
+sed -ri 's|^torchvision$|https://repo.radeon.com/rocm/manylinux/rocm-rel-7.0/torchvision-0.24.0%2Brocm7.0.0.gitf52c4f1a-cp312-cp312-linux_x86_64.whl|' "$f"
+sed -ri 's|^torchaudio$|https://repo.radeon.com/rocm/manylinux/rocm-rel-7.0/torchaudio-2.8.0%2Brocm7.0.0.git6e1c7fe9-cp312-cp312-linux_x86_64.whl|' "$f"
+sed -ri '/repo\.radeon\.com\/rocm\/manylinux\/rocm-rel-7\.0\/(pytorch_triton_rocm|onnxruntime_rocm|apex-|jax_rocm7_plugin|tensorflow_rocm)/d' "$f"
+cat >> "$f" <<'EOF'
 https://repo.radeon.com/rocm/manylinux/rocm-rel-7.0/pytorch_triton_rocm-3.4.0%2Brocm7.0.0.gitf9e5bf54-cp312-cp312-linux_x86_64.whl
 https://repo.radeon.com/rocm/manylinux/rocm-rel-7.0/onnxruntime_rocm-1.22.1-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
 https://repo.radeon.com/rocm/manylinux/rocm-rel-7.0/apex-1.8.0a0%2Brocm7.0.0.git3f26640c-cp312-cp312-linux_x86_64.whl
@@ -45,8 +43,8 @@ hiredis
 PyOpenGL-accelerate
 sageattention
 EOF
-    # Safety: strip any accidental leading '+' before URL schemes
-    sed -ri 's|^\+([A-Za-z]+://)|\1|' "$f"
+sed -ri 's|^\+([A-Za-z]+://)|\1|' "$f"
+SH
 
 RUN pip install -r requirements.txt
 
