@@ -23,27 +23,29 @@ RUN apt update && apt full-upgrade -y && \
     apt autoclean -y && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /dockerx/ComfyUI
-RUN <<'SH'
-set -Eeuo pipefail
-f=requirements.txt
-sed -i 's/\r$//' "$f"
-sed -ri 's|^torch$|https://repo.radeon.com/rocm/manylinux/rocm-rel-7.0/torch-2.8.0%2Brocm7.0.0.git64359f59-cp312-cp312-linux_x86_64.whl|' "$f"
-sed -ri 's|^torchvision$|https://repo.radeon.com/rocm/manylinux/rocm-rel-7.0/torchvision-0.24.0%2Brocm7.0.0.gitf52c4f1a-cp312-cp312-linux_x86_64.whl|' "$f"
-sed -ri 's|^torchaudio$|https://repo.radeon.com/rocm/manylinux/rocm-rel-7.0/torchaudio-2.8.0%2Brocm7.0.0.git6e1c7fe9-cp312-cp312-linux_x86_64.whl|' "$f"
-sed -ri '/repo\.radeon\.com\/rocm\/manylinux\/rocm-rel-7\.0\/(pytorch_triton_rocm|onnxruntime_rocm|apex-|jax_rocm7_plugin|tensorflow_rocm)/d' "$f"
-cat >> "$f" <<'EOF'
-https://repo.radeon.com/rocm/manylinux/rocm-rel-7.0/pytorch_triton_rocm-3.4.0%2Brocm7.0.0.gitf9e5bf54-cp312-cp312-linux_x86_64.whl
-https://repo.radeon.com/rocm/manylinux/rocm-rel-7.0/onnxruntime_rocm-1.22.1-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
-https://repo.radeon.com/rocm/manylinux/rocm-rel-7.0/apex-1.8.0a0%2Brocm7.0.0.git3f26640c-cp312-cp312-linux_x86_64.whl
-https://repo.radeon.com/rocm/manylinux/rocm-rel-7.0/jax_rocm7_plugin-0.6.0-cp312-cp312-manylinux_2_28_x86_64.whl
-https://repo.radeon.com/rocm/manylinux/rocm-rel-7.0/tensorflow_rocm-2.19.0-cp312-cp312-manylinux_2_28_x86_64.whl
-flash-attn
-hiredis
-PyOpenGL-accelerate
-sageattention
-EOF
-sed -ri 's|^\+([A-Za-z]+://)|\1|' "$f"
-SH
+
+RUN set -eu; \
+  f=requirements.txt; \
+  # Normalize CRLF just in case
+  sed -i 's/\r$//' "$f"; \
+  # Exact replacements (won't hit torchsde)
+  sed -i 's|^torch$|https://repo.radeon.com/rocm/manylinux/rocm-rel-7.0/torch-2.8.0%2Brocm7.0.0.git64359f59-cp312-cp312-linux_x86_64.whl|' "$f"; \
+  sed -i 's|^torchvision$|https://repo.radeon.com/rocm/manylinux/rocm-rel-7.0/torchvision-0.24.0%2Brocm7.0.0.gitf52c4f1a-cp312-cp312-linux_x86_64.whl|' "$f"; \
+  sed -i 's|^torchaudio$|https://repo.radeon.com/rocm/manylinux/rocm-rel-7.0/torchaudio-2.8.0%2Brocm7.0.0.git6e1c7fe9-cp312-cp312-linux_x86_64.whl|' "$f"; \
+  { \
+    echo 'https://repo.radeon.com/rocm/manylinux/rocm-rel-7.0/pytorch_triton_rocm-3.4.0%2Brocm7.0.0.gitf9e5bf54-cp312-cp312-linux_x86_64.whl'; \
+    echo 'https://repo.radeon.com/rocm/manylinux/rocm-rel-7.0/onnxruntime_rocm-1.22.1-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl'; \
+    echo 'https://repo.radeon.com/rocm/manylinux/rocm-rel-7.0/apex-1.8.0a0%2Brocm7.0.0.git3f26640c-cp312-cp312-linux_x86_64.whl'; \
+    echo 'https://repo.radeon.com/rocm/manylinux/rocm-rel-7.0/jax_rocm7_plugin-0.6.0-cp312-cp312-manylinux_2_28_x86_64.whl'; \
+    echo 'https://repo.radeon.com/rocm/manylinux/rocm-rel-7.0/tensorflow_rocm-2.19.0-cp312-cp312-manylinux_2_28_x86_64.whl'; \
+    echo 'flash-attn'; \
+    echo 'hiredis'; \
+    echo 'PyOpenGL-accelerate'; \
+    echo 'sageattention'; \
+  } >> "$f"; \
+  # Safety: if a stray '+' ever appears at start of URL line
+  sed -i 's|^\+https://|https://|' "$f"
+
 
 RUN pip install -r requirements.txt
 
