@@ -23,7 +23,6 @@ RUN apt update && apt full-upgrade -y && \
     apt autoclean -y && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /dockerx/ComfyUI
-COPY custom_requirements.patch .
 RUN <<'SH'
 set -Eeuo pipefail
 f=requirements.txt
