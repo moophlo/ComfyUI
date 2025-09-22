@@ -49,7 +49,6 @@ RUN set -eu; \
 
 RUN pip install -r requirements.txt
 
-
 # Build and install ROCm Flash-Attention from source
 WORKDIR /dockerx
 

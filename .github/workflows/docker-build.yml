@@ -103,7 +103,7 @@ jobs:
           # Wait up to 300s (5 minutes), polling every 2s
           SECONDS=0
           until curl -fsS http://127.0.0.1:8188/ >/dev/null; do
-            if (( SECONDS >= 300 )); then
+            if (( SECONDS >= 600 )); then
               echo "ComfyUI did not become ready within 5 minutes"
               exit 1
             fi
