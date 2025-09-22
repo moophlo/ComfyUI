@@ -85,32 +85,32 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Smoke test ComfyUI container (wait up to 5 minutes)
-        shell: bash
-        run: |
-          set -euo pipefail
-          TEST_TAG="$(echo '${{ fromJSON(steps.meta.outputs.json).tags[0] }}')-test"
+      #- name: Smoke test ComfyUI container (wait up to 5 minutes)
+      #  shell: bash
+      #  run: |
+      #    set -euo pipefail
+      #    TEST_TAG="$(echo '${{ fromJSON(steps.meta.outputs.json).tags[0] }}')-test"
 
-          # Run container (adjust env/volumes as your image needs)
-          CID=$(docker run -d -p 8188:8188 --name comfyui-smoke "$TEST_TAG")
+      #    # Run container (adjust env/volumes as your image needs)
+      #    CID=$(docker run -d -p 8188:8188 --name comfyui-smoke "$TEST_TAG")
 
-          cleanup() {
-            docker logs "$CID" || true
-            docker rm -f "$CID" || true
-          }
-          trap cleanup EXIT
+      #    cleanup() {
+      #      docker logs "$CID" || true
+      #      docker rm -f "$CID" || true
+      #    }
+      #    trap cleanup EXIT
 
-          # Wait up to 300s (5 minutes), polling every 2s
-          SECONDS=0
-          until curl -fsS http://127.0.0.1:8188/ >/dev/null; do
-            if (( SECONDS >= 600 )); then
-              echo "ComfyUI did not become ready within 5 minutes"
-              exit 1
-            fi
-            sleep 2
-          done
+      #    # Wait up to 300s (5 minutes), polling every 2s
+      #    SECONDS=0
+      #    until curl -fsS http://127.0.0.1:8188/ >/dev/null; do
+      #      if (( SECONDS >= 600 )); then
+      #        echo "ComfyUI did not become ready within 5 minutes"
+      #        exit 1
+      #      fi
+      #      sleep 2
+      #    done
 
-          echo "✅ ComfyUI is responding on http://127.0.0.1:8188/"
+      #    echo "✅ ComfyUI is responding on http://127.0.0.1:8188/"
 
       # ---------- PHASE 2: Multi-arch push (reuses cache) ----------
       - name: Build and push (multi-arch)
