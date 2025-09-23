@@ -8,6 +8,7 @@ on:
 
 jobs:
   build-test-and-push:
+    timeout-minutes: 4320
     runs-on: self-hosted
     env:
       TEST_PLATFORM: linux/amd64

@@ -3,7 +3,6 @@ FROM rocm/pytorch:rocm7.0_ubuntu24.04_py3.12_pytorch_release_2.8.0
 USER root
 WORKDIR /dockerx
 
-# Clone ComfyUI and install its requirements
 RUN git clone https://github.com/comfyanonymous/ComfyUI.git
 
 # System update and base packages
