@@ -48,8 +48,14 @@ RUN set -eu; \
   # Safety: if a stray '+' ever appears at start of URL line
   sed -i 's|^\+https://|https://|' "$f"
 
+ENV PIP_DEFAULT_TIMEOUT=180 \
+    PIP_RETRIES=25 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
-RUN pip install -r requirements.txt
+RUN python -m pip install --upgrade pip
+
+
+RUN pip install --timeout 180 --retries 25 -r requirements.txt
 
 # Build and install ROCm Flash-Attention from source
 WORKDIR /dockerx
