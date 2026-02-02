@@ -1,13 +1,12 @@
-name: Build, Test and Push Docker Image (Tagged)
+name: Build and Push Docker Image (Tagged)
 
 on:
   push:
     branches: ["main", "master"]
-    paths:
-      - Dockerfile
-  push:
     tags:
       - "v*"
+    paths:
+      - Dockerfile
 
 concurrency:
   group: docker-${{ github.ref }}
@@ -20,7 +19,7 @@ jobs:
 
     env:
       TEST_PLATFORM: linux/amd64
-      # Recommended for Docker Hub: <dockerhub_user>/<repo>
+      # Docker Hub image: <dockerhub_user>/<repo>
       IMAGE_NAME: ${{ vars.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}
 
     steps:
@@ -38,7 +37,6 @@ jobs:
             exit 1
           fi
 
-          # If there is a tag, take it; otherwise "latest"
           if [[ "$FROM_LINE" == *":"* ]]; then
             BASE_TAG="${FROM_LINE##*:}"
           else
@@ -73,7 +71,6 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
           logout: true
 
-      # ---------- Build and push (amd64), upload cache once ----------
       - name: Build and push (amd64)
         uses: docker/build-push-action@v5
         with:
@@ -88,3 +85,4 @@ jobs:
             VCS_REF=${{ github.sha }}
           cache-from: type=local,src=/cache/buildx
           cache-to: type=local,dest=/cache/buildx,mode=max
+
