@@ -85,6 +85,7 @@ jobs:
             BUILD_DATE=${{ github.event.head_commit.timestamp || '' }}
             VERSION=${{ github.ref_type == 'tag' && github.ref_name || github.sha }}
             VCS_REF=${{ github.sha }}
-          cache-from: type=local,src=/cache/buildx
-          cache-to: type=local,dest=/cache/buildx,mode=max
+          cache-from: type=local,src=/runner/_work/_temp/buildx-cache
+          cache-to: type=local,dest=/runner/_work/_temp/buildx-cache,mode=max
+
 
