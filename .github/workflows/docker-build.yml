@@ -1,38 +1,50 @@
-name: Build, Test and Push Docker Image (Tagged & Multi-Arch)
+name: Build, Test and Push Docker Image (Tagged)
 
 on:
   push:
-    paths: ['Dockerfile']
     branches: ["main", "master"]
-    tags: ['v*']
+    paths:
+      - Dockerfile
+  push:
+    tags:
+      - "v*"
+
+concurrency:
+  group: docker-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-test-and-push:
-    timeout-minutes: 4320
     runs-on: self-hosted
+    timeout-minutes: 4320
+
     env:
       TEST_PLATFORM: linux/amd64
+      # Recommended for Docker Hub: <dockerhub_user>/<repo>
+      IMAGE_NAME: ${{ vars.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Always compute a base tag from the Dockerfile; if none, force "latest"
       - name: Extract base tag from Dockerfile (MANDATORY)
         id: base
         shell: bash
         run: |
           set -euo pipefail
-          FROM_LINE=$(grep -m1 -E '^FROM ' Dockerfile || true)
-          if [[ -z "$FROM_LINE" ]]; then
+          FROM_LINE="$(grep -m1 -E '^FROM[[:space:]]+' Dockerfile)"
+          if [[ -z "${FROM_LINE:-}" ]]; then
             echo "No FROM line found in Dockerfile" >&2
             exit 1
           fi
+
+          # If there is a tag, take it; otherwise "latest"
           if [[ "$FROM_LINE" == *":"* ]]; then
-            BASE_TAG=$(echo "$FROM_LINE" | sed -E 's/^FROM\s+[^:]+:(.*)/\1/')
+            BASE_TAG="${FROM_LINE##*:}"
           else
             BASE_TAG="latest"
           fi
+
           echo "base_tag=$BASE_TAG" >> "$GITHUB_OUTPUT"
           echo "Using base_tag=$BASE_TAG"
 
@@ -40,23 +52,16 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ github.repository }}
+          images: ${{ env.IMAGE_NAME }}
           tags: |
-            # always tag latest (both on branches and tags)
             type=raw,value=latest
-            # short SHA
             type=sha,format=short
-            # tag refs like v1.2.3
             type=ref,event=tag
-            # mandatory base tag extracted above
             type=raw,value=${{ steps.base.outputs.base_tag }}
           labels: |
             org.opencontainers.image.source=${{ github.repositoryUrl }}
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.created=${{ github.event.head_commit.timestamp || '' }}
-
-      - name: Set up QEMU (for multi-arch)
-        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -68,57 +73,12 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
           logout: true
 
-      # ---------- PHASE 1: Build (native) for testing ----------
-      - name: Build (native) + load for tests
+      # ---------- Build and push (amd64), upload cache once ----------
+      - name: Build and push (amd64)
         uses: docker/build-push-action@v5
         with:
           context: .
           platforms: ${{ env.TEST_PLATFORM }}
-          load: true
-          push: false
-          # use first metadata tag as the base, append -test for local run
-          tags: ${{ fromJSON(steps.meta.outputs.json).tags[0] }}-test
-          labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            BUILD_DATE=${{ github.event.head_commit.timestamp || '' }}
-            VERSION=${{ github.ref_type == 'tag' && github.ref_name || github.sha }}
-            VCS_REF=${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      #- name: Smoke test ComfyUI container (wait up to 5 minutes)
-      #  shell: bash
-      #  run: |
-      #    set -euo pipefail
-      #    TEST_TAG="$(echo '${{ fromJSON(steps.meta.outputs.json).tags[0] }}')-test"
-
-      #    # Run container (adjust env/volumes as your image needs)
-      #    CID=$(docker run -d -p 8188:8188 --name comfyui-smoke "$TEST_TAG")
-
-      #    cleanup() {
-      #      docker logs "$CID" || true
-      #      docker rm -f "$CID" || true
-      #    }
-      #    trap cleanup EXIT
-
-      #    # Wait up to 300s (5 minutes), polling every 2s
-      #    SECONDS=0
-      #    until curl -fsS http://127.0.0.1:8188/ >/dev/null; do
-      #      if (( SECONDS >= 600 )); then
-      #        echo "ComfyUI did not become ready within 5 minutes"
-      #        exit 1
-      #      fi
-      #      sleep 2
-      #    done
-
-      #    echo "✅ ComfyUI is responding on http://127.0.0.1:8188/"
-
-      # ---------- PHASE 2: Multi-arch push (reuses cache) ----------
-      - name: Build and push (multi-arch)
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          platforms: linux/amd64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -126,6 +86,5 @@ jobs:
             BUILD_DATE=${{ github.event.head_commit.timestamp || '' }}
             VERSION=${{ github.ref_type == 'tag' && github.ref_name || github.sha }}
             VCS_REF=${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
+          cache-from: type=local,src=/cache/buildx
+          cache-to: type=local,dest=/cache/buildx,mode=max
