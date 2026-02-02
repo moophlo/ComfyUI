@@ -15,9 +15,9 @@ VAE_APPROX_DIR="$MODELS_DIR/vae_approx"
 : "${COMMANDLINE_ARGS:=--listen --front-end-version Comfy-Org/ComfyUI_frontend@latest --use-split-cross-attention --reserve-vram 6}"
 
 # Controls (all optional)
-: "${UPDATE_ON_START:=0}"              # 1 = git fetch/reset on startup
-: "${INSTALL_DEPS_ON_START:=0}"        # 1 = pip install requirements on startup
-: "${INSTALL_FLASH_ATTN_ON_START:=0}"  # 1 = pip install flash-attn at runtime
+: "${UPDATE_ON_START:=1}"              # 1 = git fetch/reset on startup
+: "${INSTALL_DEPS_ON_START:=1}"        # 1 = pip install requirements on startup
+: "${INSTALL_FLASH_ATTN_ON_START:=1}"  # 1 = pip install flash-attn at runtime
 : "${OFFLINE:=0}"                      # 1 = skip git/pip/wget network actions
 : "${PIP_ARGS:=--timeout 180 --retries 25}"  # extra pip args
 
