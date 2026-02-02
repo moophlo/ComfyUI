@@ -1,110 +1,183 @@
-#!/bin/bash -x
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+[[ "${DEBUG:-0}" == "1" ]] && set -x
 
 export FLASH_ATTENTION_TRITON_AMD_ENABLE="TRUE"
+export PIP_DISABLE_PIP_VERSION_CHECK=1
 
-if [ -n "$COMMANDLINE_ARGS" ]; then
-	export COMMANDLINE_ARGS=$COMMANDLINE_ARGS
-else
-	export COMMANDLINE_ARGS="--listen --front-end-version Comfy-Org/ComfyUI_frontend@latest --use-split-cross-attention --reserve-vram 6"
-fi
+COMFY_DIR="/dockerx/ComfyUI"
+CUSTOM_DIR="$COMFY_DIR/custom_nodes"
+MODELS_DIR="$COMFY_DIR/models"
+VAE_APPROX_DIR="$MODELS_DIR/vae_approx"
 
-# Update the main repository, patch it, and install its requirements
-cd /dockerx/ComfyUI || exit
-git fetch origin
-git reset --hard origin/master	
-patch -F 3 -p1 < custom_requirements.patch
-pip install -r requirements.txt
+# Default args if not provided
+: "${COMMANDLINE_ARGS:=--listen --front-end-version Comfy-Org/ComfyUI_frontend@latest --use-split-cross-attention --reserve-vram 6}"
 
-if [ -d /dockerx/ComfyUI/custom_nodes/ComfyUI-GGUF ]; then
-	cd /dockerx/ComfyUI/custom_nodes/ComfyUI-GGUF || exit
-	#git pull
-        git fetch origin
-        git reset --hard origin/main	
-        pip install -r /dockerx/ComfyUI/custom_nodes/ComfyUI-GGUF/requirements.txt
-	cd - || exit
-else
-	git clone https://github.com/city96/ComfyUI-GGUF /dockerx/ComfyUI/custom_nodes/ComfyUI-GGUF
-  pip install -r /dockerx/ComfyUI/custom_nodes/ComfyUI-GGUF/requirements.txt
-fi
+# Controls (all optional)
+: "${UPDATE_ON_START:=0}"              # 1 = git fetch/reset on startup
+: "${INSTALL_DEPS_ON_START:=0}"        # 1 = pip install requirements on startup
+: "${INSTALL_FLASH_ATTN_ON_START:=0}"  # 1 = pip install flash-attn at runtime
+: "${OFFLINE:=0}"                      # 1 = skip git/pip/wget network actions
+: "${PIP_ARGS:=--timeout 180 --retries 25}"  # extra pip args
 
-if [ -d /dockerx/ComfyUI/custom_nodes/ComfyUI-Manager ]; then
-	cd /dockerx/ComfyUI/custom_nodes/ComfyUI-Manager || exit
-	#git pull
-        git fetch origin
-        git reset --hard origin/main	
-        pip install -r /dockerx/ComfyUI/custom_nodes/ComfyUI-Manager/requirements.txt
-	cd - || exit
-else
-  git clone https://github.com/ltdrdata/ComfyUI-Manager.git /dockerx/ComfyUI/custom_nodes/ComfyUI-Manager
-  pip install -r /dockerx/ComfyUI/custom_nodes/ComfyUI-Manager/requirements.txt
-fi
+log() { echo "[$(date -Is)] $*"; }
 
-if [ -d /dockerx/ComfyUI/custom_nodes/ComfyUI-Crystools ]; then
-	cd /dockerx/ComfyUI/custom_nodes/ComfyUI-Crystools || exit
-	#git pull
-        git fetch origin
-        git reset --hard origin/AMD	
-        pip install -r /dockerx/ComfyUI/custom_nodes/ComfyUI-Crystools/requirements.txt
-	cd - || exit
-else
-  git clone -b AMD https://github.com/crystian/ComfyUI-Crystools.git /dockerx/ComfyUI/custom_nodes/ComfyUI-Crystools
-  echo "numpy==2.0.2" >>  /dockerx/ComfyUI/custom_nodes/ComfyUI-Crystools/requirements.txt
-  pip install -r /dockerx/ComfyUI/custom_nodes/ComfyUI-Crystools/requirements.txt
-  pip install --no-cache-dir --no-deps --force-reinstall "pandas==2.2.3"
-fi
+require_cmd() {
+  command -v "$1" >/dev/null 2>&1 || { echo "Missing required command: $1" >&2; exit 1; }
+}
 
-echo "Installing additional requirements from custom_nodes..."
-# Use find to look for requirements.txt files under custom_nodes
-find /dockerx/ComfyUI/custom_nodes/ -type f -name "requirements.txt" | while read req; do
-    echo "Installing requirements from $req"
-    pip install -r "$req"
-done
+git_sync() {
+  # git_sync <path> <remote_branch> <clone_url> [clone_branch]
+  local path="$1" remote_branch="$2" clone_url="$3" clone_branch="${4:-}"
 
-# Process extra custom node repositories if provided.
-# EXTRA_CUSTOM_NODES can be a comma or semicolon separated list of Git URLs.
-if [ -n "$EXTRA_CUSTOM_NODES" ]; then
-    mkdir -p /dockerx/ComfyUI/custom_nodes
-    # Split the EXTRA_CUSTOM_NODES variable on comma and semicolon
+  if [[ "$OFFLINE" == "1" ]]; then
+    log "OFFLINE=1: skipping git operations for $path"
+    return 0
+  fi
+
+  if [[ -d "$path/.git" ]]; then
+    if [[ "$UPDATE_ON_START" == "1" ]]; then
+      log "Updating $(basename "$path") -> $remote_branch"
+      git -C "$path" fetch --prune origin
+      git -C "$path" reset --hard "$remote_branch"
+    else
+      log "UPDATE_ON_START=0: not updating $(basename "$path")"
+    fi
+  else
+    log "Cloning $(basename "$path")"
+    if [[ -n "$clone_branch" ]]; then
+      git clone -b "$clone_branch" "$clone_url" "$path"
+    else
+      git clone "$clone_url" "$path"
+    fi
+  fi
+}
+
+pip_install_req() {
+  # pip_install_req <requirements_file>
+  local req="$1"
+  [[ -f "$req" ]] || return 0
+
+  if [[ "$OFFLINE" == "1" ]]; then
+    log "OFFLINE=1: skipping pip install -r $req"
+    return 0
+  fi
+
+  log "pip install -r $req"
+  pip install $PIP_ARGS -r "$req"
+}
+
+pip_install_pkg() {
+  # pip_install_pkg <pkg>
+  local pkg="$1"
+
+  if [[ "$OFFLINE" == "1" ]]; then
+    log "OFFLINE=1: skipping pip install $pkg"
+    return 0
+  fi
+
+  log "pip install $pkg"
+  pip install $PIP_ARGS "$pkg"
+}
+
+download_if_missing() {
+  # download_if_missing <url> <dest_file>
+  local url="$1" dest="$2"
+
+  if [[ -f "$dest" ]]; then
+    return 0
+  fi
+
+  if [[ "$OFFLINE" == "1" ]]; then
+    log "OFFLINE=1: missing $dest but skipping download"
+    return 0
+  fi
+
+  log "Downloading $(basename "$dest")"
+  wget -q -O "$dest" "$url"
+}
+
+main() {
+  require_cmd git
+  require_cmd pip
+  require_cmd python
+  require_cmd wget
+
+  mkdir -p "$CUSTOM_DIR" "$VAE_APPROX_DIR"
+
+  # --- Sync core repo (optional update) ---
+  git_sync "$COMFY_DIR" "origin/master" "https://github.com/comfyanonymous/ComfyUI.git"
+
+  # Apply patch only if present (and do not fail hard if already applied)
+  if [[ -f "$COMFY_DIR/custom_requirements.patch" ]]; then
+    log "Applying custom_requirements.patch"
+    patch -F 3 -p1 -d "$COMFY_DIR" < "$COMFY_DIR/custom_requirements.patch" || true
+  fi
+
+  # Install core requirements only if asked
+  if [[ "$INSTALL_DEPS_ON_START" == "1" ]]; then
+    pip_install_req "$COMFY_DIR/requirements.txt"
+  else
+    log "INSTALL_DEPS_ON_START=0: skipping core pip installs"
+  fi
+
+  # --- Custom nodes (sync + optional deps) ---
+  git_sync "$CUSTOM_DIR/ComfyUI-GGUF" "origin/main" "https://github.com/city96/ComfyUI-GGUF"
+  [[ "$INSTALL_DEPS_ON_START" == "1" ]] && pip_install_req "$CUSTOM_DIR/ComfyUI-GGUF/requirements.txt"
+
+  git_sync "$CUSTOM_DIR/ComfyUI-Manager" "origin/main" "https://github.com/ltdrdata/ComfyUI-Manager.git"
+  [[ "$INSTALL_DEPS_ON_START" == "1" ]] && pip_install_req "$CUSTOM_DIR/ComfyUI-Manager/requirements.txt"
+
+  git_sync "$CUSTOM_DIR/ComfyUI-Crystools" "origin/AMD" "https://github.com/crystian/ComfyUI-Crystools.git" "AMD"
+  if [[ "$INSTALL_DEPS_ON_START" == "1" ]]; then
+    # Ensure your pinned numpy line exists exactly once
+    if [[ -f "$CUSTOM_DIR/ComfyUI-Crystools/requirements.txt" ]] && ! grep -q '^numpy==2\.0\.2$' "$CUSTOM_DIR/ComfyUI-Crystools/requirements.txt"; then
+      echo "numpy==2.0.2" >> "$CUSTOM_DIR/ComfyUI-Crystools/requirements.txt"
+    fi
+    pip_install_req "$CUSTOM_DIR/ComfyUI-Crystools/requirements.txt"
+    pip_install_pkg "pandas==2.2.3"
+  fi
+
+  # --- EXTRA_CUSTOM_NODES ---
+  if [[ -n "${EXTRA_CUSTOM_NODES:-}" ]]; then
     IFS=',;' read -ra repo_list <<< "$EXTRA_CUSTOM_NODES"
     for repo in "${repo_list[@]}"; do
-        # Derive the custom node directory name from the Git URL by taking the basename and stripping .git if present.
-        custom_dir=$(basename "$repo")
-        custom_dir=${custom_dir%.git}
-        custom_path="/dockerx/ComfyUI/custom_nodes/$custom_dir"
+      repo="$(echo "$repo" | xargs)" # trim
+      [[ -z "$repo" ]] && continue
+      custom_dir="$(basename "$repo")"
+      custom_dir="${custom_dir%.git}"
+      custom_path="$CUSTOM_DIR/$custom_dir"
 
-        if [ -d "$custom_path" ]; then
-            cd "$custom_path" || exit
-            git fetch origin
-            git reset --hard origin/main
-            [ -f requirements.txt ] && pip install -r requirements.txt
-            cd - || exit
-        else
-            git clone "$repo" "$custom_path"
-            [ -f "$custom_path/requirements.txt" ] && pip install -r "$custom_path/requirements.txt"
-        fi
+      # assumes "main"
+      git_sync "$custom_path" "origin/main" "$repo"
+      [[ "$INSTALL_DEPS_ON_START" == "1" ]] && pip_install_req "$custom_path/requirements.txt"
     done
-fi
+  fi
 
-# Install extra pip packages if specified.
-# EXTRA_PIP_PACKAGES can be a comma or semicolon separated list.
-if [ -n "$EXTRA_PIP_PACKAGES" ]; then
+  # --- EXTRA_PIP_PACKAGES ---
+  if [[ -n "${EXTRA_PIP_PACKAGES:-}" ]]; then
     IFS=',;' read -ra pkg_list <<< "$EXTRA_PIP_PACKAGES"
     for pkg in "${pkg_list[@]}"; do
-        pip install "$pkg"
+      pkg="$(echo "$pkg" | xargs)"
+      [[ -z "$pkg" ]] && continue
+      pip_install_pkg "$pkg"
     done
-fi
+  fi
 
-# Download additional model files if they are not already present
-mkdir -p /dockerx/ComfyUI/models/vae_approx && cd /dockerx/ComfyUI/models/vae_approx || exit
-if [ ! -f taesd_decoder.pth ]; then
-    wget -c https://github.com/madebyollin/taesd/raw/main/taesd_decoder.pth
-fi
+  # --- Models downloads ---
+  download_if_missing "https://github.com/madebyollin/taesd/raw/main/taesd_decoder.pth"   "$VAE_APPROX_DIR/taesd_decoder.pth"
+  download_if_missing "https://github.com/madebyollin/taesd/raw/main/taesdxl_decoder.pth" "$VAE_APPROX_DIR/taesdxl_decoder.pth"
 
-if [ ! -f taesdxl_decoder.pth ]; then
-    wget -c https://github.com/madebyollin/taesd/raw/main/taesdxl_decoder.pth
-fi
-cd - || exit
+  # --- flash-attn: do NOT install at runtime unless explicitly requested ---
+  if [[ "${INSTALL_FLASH_ATTN_ON_START}" == "1" ]]; then
+    pip_install_pkg "flash-attn"
+  fi
 
-pip install --no-build-isolation --no-cache-dir flash-attn
+  log "Starting ComfyUI: python main.py $COMMANDLINE_ARGS"
+  cd "$COMFY_DIR"
+  exec python main.py $COMMANDLINE_ARGS
+}
 
-python main.py $COMMANDLINE_ARGS
+main "$@"
+
