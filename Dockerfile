@@ -1,4 +1,4 @@
-FROM rocm/pytorch:rocm7.0_ubuntu24.04_py3.12_pytorch_release_2.8.0
+FROM rocm/pytorch:rocm7.2_ubuntu24.04_py3.12_pytorch_release_2.9.1
 
 USER root
 WORKDIR /dockerx
@@ -8,6 +8,7 @@ RUN git clone https://github.com/comfyanonymous/ComfyUI.git
 # System update and base packages
 RUN apt update && apt full-upgrade -y && \
     apt install -y \
+      python3.13-full \
       bc \
       google-perftools \
       wget \
@@ -27,16 +28,19 @@ RUN set -eu; \
   # Normalize CRLF just in case
   sed -i 's/\r$//' "$f"; \
   # Exact replacements (won't hit torchsde)
-  sed -i 's|^torch$|https://repo.radeon.com/rocm/manylinux/rocm-rel-7.0/torch-2.8.0%2Brocm7.0.0.git64359f59-cp312-cp312-linux_x86_64.whl|' "$f"; \
-  sed -i 's|^torchvision$|https://repo.radeon.com/rocm/manylinux/rocm-rel-7.0/torchvision-0.24.0%2Brocm7.0.0.gitf52c4f1a-cp312-cp312-linux_x86_64.whl|' "$f"; \
-  sed -i 's|^torchaudio$|https://repo.radeon.com/rocm/manylinux/rocm-rel-7.0/torchaudio-2.8.0%2Brocm7.0.0.git6e1c7fe9-cp312-cp312-linux_x86_64.whl|' "$f"; \
+  sed -i 's|^torch$|https://repo.radeon.com/rocm/manylinux/rocm-rel-7.2/torch-2.9.1%2Brocm7.2.0.lw.git7e1940d4-cp312-cp312-linux_x86_64.whl|' "$f"; \
+  sed -i 's|^torchvision$|https://repo.radeon.com/rocm/manylinux/rocm-rel-7.2/torchvision-0.25.0%2Brocm7.2.0.gitaa35ca19-cp312-cp312-linux_x86_64.whl|' "$f"; \
+  sed -i 's|^torchaudio$|https://repo.radeon.com/rocm/manylinux/rocm-rel-7.2/torchaudio-2.10.0%2Brocm7.2.0.git3b0e7a6f-cp312-cp312-linux_x86_64.whl|' "$f"; \
   { \
-    echo 'https://repo.radeon.com/rocm/manylinux/rocm-rel-7.0/pytorch_triton_rocm-3.4.0%2Brocm7.0.0.gitf9e5bf54-cp312-cp312-linux_x86_64.whl'; \
-    echo 'https://repo.radeon.com/rocm/manylinux/rocm-rel-7.0/onnxruntime_rocm-1.22.1-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl'; \
-    echo 'https://repo.radeon.com/rocm/manylinux/rocm-rel-7.0/apex-1.8.0a0%2Brocm7.0.0.git3f26640c-cp312-cp312-linux_x86_64.whl'; \
-    echo 'https://repo.radeon.com/rocm/manylinux/rocm-rel-7.0/jax_rocm7_pjrt-0.6.0-py3-none-manylinux_2_28_x86_64.whl'; \
-    echo 'https://repo.radeon.com/rocm/manylinux/rocm-rel-7.0/jax_rocm7_plugin-0.6.0-cp312-cp312-manylinux_2_28_x86_64.whl'; \
-    echo 'https://repo.radeon.com/rocm/manylinux/rocm-rel-7.0/tensorflow_rocm-2.19.0-cp312-cp312-manylinux_2_28_x86_64.whl'; \
+    echo 'https://repo.radeon.com/rocm/manylinux/rocm-rel-7.2/triton-3.5.1%2Brocm7.2.0.gita272dfa8-cp312-cp312-linux_x86_64.whl'; \
+    echo 'https://repo.radeon.com/rocm/manylinux/rocm-rel-7.2/onnxruntime_migraphx-1.23.2-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl'; \
+    echo 'https://repo.radeon.com/rocm/manylinux/rocm-rel-7.2/apex-1.10.0a0%2Brocm7.2.0.git2190fbae-cp312-cp312-linux_x86_64.whl'; \
+    echo 'https://repo.radeon.com/rocm/manylinux/rocm-rel-7.2/jax_rocm7_pjrt-0.8.0%2Brocm7.2.0-py3-none-manylinux_2_28_x86_64.whl'; \
+    echo 'https://repo.radeon.com/rocm/manylinux/rocm-rel-7.2/jax_rocm7_plugin-0.8.0%2Brocm7.2.0-cp312-cp312-manylinux_2_28_x86_64.whl'; \
+    echo 'https://repo.radeon.com/rocm/manylinux/rocm-rel-7.2/tensorflow_rocm-2.19.1-cp312-cp312-manylinux_2_28_x86_64.whl'; \
+    echo 'https://repo.radeon.com/rocm/manylinux/rocm-rel-7.2/xformers-0.0.32%2B217bdf5e.d20260113-cp39-abi3-linux_x86_64.whl'; \
+    echo 'https://repo.radeon.com/rocm/manylinux/rocm-rel-7.2/transformer_engine_rocm-2.4.0-py3-none-manylinux_2_28_x86_64.whl'; \
+    echo 'https://repo.radeon.com/rocm/manylinux/rocm-rel-7.2/triton_kernels-1.0.0-py3-none-any.whl'; \
     echo 'hiredis'; \
     echo 'PyOpenGL-accelerate'; \
     echo 'sageattention'; \
