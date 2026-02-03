@@ -45,6 +45,7 @@ ENV PIP_DEFAULT_TIMEOUT=180 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
 RUN pip install --timeout 180 --retries 25 -r requirements.txt
+RUN pip install flash-attn --no-build-isolation
 
 # Build and install ROCm Flash-Attention from source
 WORKDIR /dockerx
