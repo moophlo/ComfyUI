@@ -7,6 +7,8 @@ export FLASH_ATTENTION_TRITON_AMD_ENABLE="TRUE"
 export PIP_DISABLE_PIP_VERSION_CHECK=1
 export VIRTUAL_ENV=/opt/venv
 export PATH="$VIRTUAL_ENV/bin:$PATH"
+export PIP_NO_BUILD_ISOLATION=1
+export PIP_USE_PEP517=1
 hash -r
 python -V
 python -m pip -V
@@ -70,7 +72,7 @@ pip_install_req() {
   fi
 
   log "pip install -r $req"
-  pip install $PIP_ARGS -r "$req"
+  "$VIRTUAL_ENV/bin/python" -m pip install $PIP_ARGS -r "$req"
 }
 
 pip_install_pkg() {
@@ -83,7 +85,7 @@ pip_install_pkg() {
   fi
 
   log "pip install $pkg"
-  pip install $PIP_ARGS "$pkg"
+  "$VIRTUAL_ENV/bin/python" -m pip install $PIP_ARGS $pkg
 }
 
 download_if_missing() {
@@ -176,12 +178,12 @@ main() {
 
   # --- flash-attn: do NOT install at runtime unless explicitly requested ---
   if [[ "${INSTALL_FLASH_ATTN_ON_START}" == "1" ]]; then
-    pip_install_pkg "--no-build-isolation flash-attn"
+    "$VIRTUAL_ENV/bin/python" -m pip install $PIP_ARGS --no-build-isolation flash-attn
   fi
 
   log "Starting ComfyUI: python main.py $COMMANDLINE_ARGS"
   cd "$COMFY_DIR"
-  exec python main.py $COMMANDLINE_ARGS
+  exec "$VIRTUAL_ENV/bin/python" main.py $COMMANDLINE_ARGS
 }
 
 main "$@"
