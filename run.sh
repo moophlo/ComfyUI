@@ -5,6 +5,11 @@ set -Eeuo pipefail
 
 export FLASH_ATTENTION_TRITON_AMD_ENABLE="TRUE"
 export PIP_DISABLE_PIP_VERSION_CHECK=1
+export VIRTUAL_ENV=/opt/venv
+export PATH="$VIRTUAL_ENV/bin:$PATH"
+hash -r
+python -V
+python -m pip -V
 
 COMFY_DIR="/dockerx/ComfyUI"
 CUSTOM_DIR="$COMFY_DIR/custom_nodes"
@@ -171,7 +176,7 @@ main() {
 
   # --- flash-attn: do NOT install at runtime unless explicitly requested ---
   if [[ "${INSTALL_FLASH_ATTN_ON_START}" == "1" ]]; then
-    pip_install_pkg "flash-attn --no-build-isolation"
+    pip_install_pkg "--no-build-isolation flash-attn"
   fi
 
   log "Starting ComfyUI: python main.py $COMMANDLINE_ARGS"
