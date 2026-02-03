@@ -39,6 +39,7 @@ RUN set -eu; \
     echo 'https://repo.radeon.com/rocm/manylinux/rocm-rel-7.2/triton_kernels-1.0.0-py3-none-any.whl'; \
     echo 'hiredis'; \
     echo 'PyOpenGL-accelerate'; \
+    echo 'opencv-python'; \
     echo 'sageattention'; \
   } >> "$f"; \
   sed -i 's|^\+https://|https://|' "$f"
