@@ -24,7 +24,7 @@ VAE_APPROX_DIR="$MODELS_DIR/vae_approx"
 # Controls (all optional)
 : "${UPDATE_ON_START:=1}"              # 1 = git fetch/reset on startup
 : "${INSTALL_DEPS_ON_START:=1}"        # 1 = pip install requirements on startup
-: "${INSTALL_FLASH_ATTN_ON_START:=0}"  # 1 = pip install flash-attn at runtime
+: "${INSTALL_FLASH_ATTN_ON_START:=1}"  # 1 = pip install flash-attn at runtime
 : "${OFFLINE:=0}"                      # 1 = skip git/pip/wget network actions
 : "${PIP_ARGS:=--timeout 180 --retries 25}"  # extra pip args
 
@@ -177,6 +177,7 @@ main() {
   download_if_missing "https://github.com/madebyollin/taesd/raw/main/taesdxl_decoder.pth" "$VAE_APPROX_DIR/taesdxl_decoder.pth"
 
   # --- flash-attn: do NOT install at runtime unless explicitly requested ---
+  # Install flash-attn in the SAME env, disabling build isolation (critical)
   if [[ "${INSTALL_FLASH_ATTN_ON_START}" == "1" ]]; then
     "$VIRTUAL_ENV/bin/python" -m pip install $PIP_ARGS --no-build-isolation flash-attn
   fi

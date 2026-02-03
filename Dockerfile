@@ -46,8 +46,6 @@ RUN set -eu; \
 # Install requirements explicitly via the venv interpreter
 RUN /opt/venv/bin/python -m pip install --timeout 180 --retries 25 -r requirements.txt
 
-# Install flash-attn in the SAME env, disabling build isolation (critical)
-RUN /opt/venv/bin/python -m pip install --no-build-isolation --timeout 180 --retries 25 flash-attn
 
 WORKDIR /dockerx/ComfyUI
 COPY run.sh .
