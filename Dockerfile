@@ -40,7 +40,7 @@ RUN set -eu; \
   # Safety: if a stray '+' ever appears at start of URL line
   sed -i 's|^\+https://|https://|' "$f"
 
-RUN pip install flash-attn --no-build-isolation
+#RUN pip install flash-attn --no-build-isolation
 ENV PIP_DEFAULT_TIMEOUT=180 \
     PIP_RETRIES=25 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
