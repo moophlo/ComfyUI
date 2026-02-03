@@ -26,7 +26,7 @@ ENV PIP_DEFAULT_TIMEOUT=180 \
     PIP_RETRIES=25 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     VIRTUAL_ENV=/opt/venv \
-    PATH="$VIRTUAL_ENV/bin:$PATH"
+    PATH="/opt/venv/bin:$PATH"
 
 RUN set -eu; \
   f=requirements.txt; \
@@ -45,7 +45,7 @@ RUN set -eu; \
   # Safety: if a stray '+' ever appears at start of URL line
   sed -i 's|^\+https://|https://|' "$f"
 
-RUN pip install --no-build-isolation flash-attn
+#RUN pip install --no-build-isolation flash-attn
 
 RUN pip install --timeout 180 --retries 25 -r requirements.txt
 
