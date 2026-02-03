@@ -171,7 +171,7 @@ main() {
 
   # --- flash-attn: do NOT install at runtime unless explicitly requested ---
   if [[ "${INSTALL_FLASH_ATTN_ON_START}" == "1" ]]; then
-    pip_install_pkg "flash-attn"
+    pip_install_pkg "flash-attn --no-build-isolation"
   fi
 
   log "Starting ComfyUI: python main.py $COMMANDLINE_ARGS"
