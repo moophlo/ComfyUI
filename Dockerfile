@@ -50,6 +50,7 @@ RUN /opt/venv/bin/python -m pip install --timeout 180 --retries 25 -r requiremen
 
 WORKDIR /dockerx/ComfyUI
 COPY run.sh .
+COPY tunableop_check_and_tune.py .
 RUN chmod +x run.sh
 
 ENTRYPOINT ["./run.sh"]
