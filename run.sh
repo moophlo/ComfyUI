@@ -22,11 +22,20 @@ VAE_APPROX_DIR="$MODELS_DIR/vae_approx"
 : "${COMMANDLINE_ARGS:=--listen --front-end-version Comfy-Org/ComfyUI_frontend@latest --use-split-cross-attention --reserve-vram 6}"
 
 # Controls (all optional)
-: "${UPDATE_ON_START:=1}"              # 1 = git fetch/reset on startup
-: "${INSTALL_DEPS_ON_START:=1}"        # 1 = pip install requirements on startup
-: "${INSTALL_FLASH_ATTN_ON_START:=1}"  # 1 = pip install flash-attn at runtime
-: "${OFFLINE:=0}"                      # 1 = skip git/pip/wget network actions
+: "${UPDATE_ON_START:=1}"                    # 1 = git fetch/reset on startup
+: "${INSTALL_DEPS_ON_START:=1}"              # 1 = pip install requirements on startup
+: "${INSTALL_FLASH_ATTN_ON_START:=1}"        # 1 = pip install flash-attn at runtime
+: "${OFFLINE:=0}"                            # 1 = skip git/pip/wget network actions
 : "${PIP_ARGS:=--timeout 180 --retries 25}"  # extra pip args
+
+# TunableOp (PyTorch ROCm) tuning controls
+# ENABLE_TUNABLEOP_TUNING: 1 = check tuning file and run offline tuning if needed
+# By default we use CUSTOM_DIR (which is usually persisted) as the base dir
+# for TunableOp result files, so tunings survive container rebuilds.
+: "${ENABLE_TUNABLEOP_TUNING:=1}"
+: "${TUNABLEOP_DIR:=$CUSTOM_DIR}"
+: "${TUNABLEOP_RESULTS_FILE:=$TUNABLEOP_DIR/tunableop_results0.csv}"
+: "${TUNABLEOP_UNTUNED_FILE:=$TUNABLEOP_DIR/tunableop_untuned0.csv}"
 
 log() { echo "[$(date -Is)] $*"; }
 
@@ -105,6 +114,43 @@ download_if_missing() {
   wget -q -O "$dest" "$url"
 }
 
+ensure_tunableop_tuning() {
+  # Run a lightweight check to ensure the TunableOp tuning file:
+  # - exists, and
+  # - matches the current software configuration (validators inside the CSV).
+  #
+  # If the file is missing or invalid, and an untuned file is present, the helper
+  # will perform offline tuning to regenerate it.
+
+  if [[ "${ENABLE_TUNABLEOP_TUNING}" != "1" ]]; then
+    log "ENABLE_TUNABLEOP_TUNING!=1: skipping TunableOp tuning check"
+    return 0
+  fi
+
+  if [[ ! -f "$COMFY_DIR/tunableop_check_and_tune.py" ]]; then
+    log "tunableop_check_and_tune.py not found in $COMFY_DIR; skipping TunableOp tuning"
+    return 0
+  fi
+
+  log "Checking TunableOp tuning status"
+
+  # Prefer the configured untuned file path under the persistent directory.
+  # If it doesn't exist but we find a legacy/default untuned file in COMFY_DIR,
+  # copy it into the persistent volume so it survives container rebuilds.
+  if [[ ! -f "$TUNABLEOP_UNTUNED_FILE" ]]; then
+    if [[ "$TUNABLEOP_UNTUNED_FILE" == "$TUNABLEOP_DIR/tunableop_untuned0.csv" && -f "$COMFY_DIR/tunableop_untuned0.csv" ]]; then
+      log "Copying TunableOp untuned file from COMFY_DIR to persistent dir: $TUNABLEOP_DIR"
+      mkdir -p "$TUNABLEOP_DIR"
+      cp "$COMFY_DIR/tunableop_untuned0.csv" "$TUNABLEOP_UNTUNED_FILE" || true
+    fi
+  fi
+
+  TUNABLEOP_DIR="$TUNABLEOP_DIR" \
+  TUNABLEOP_RESULTS_FILE="$TUNABLEOP_RESULTS_FILE" \
+  TUNABLEOP_UNTUNED_FILE="$TUNABLEOP_UNTUNED_FILE" \
+  "$VIRTUAL_ENV/bin/python" "$COMFY_DIR/tunableop_check_and_tune.py" || true
+}
+
 main() {
   require_cmd git
   require_cmd pip
@@ -181,6 +227,27 @@ main() {
   if [[ "${INSTALL_FLASH_ATTN_ON_START}" == "1" ]]; then
     "$VIRTUAL_ENV/bin/python" -m pip install $PIP_ARGS --no-build-isolation flash-attn
   fi
+
+  # If TunableOp tuning is enabled and we don't yet have an untuned file in the
+  # persistent location, configure PyTorch to record untuned GEMMs during this run.
+  # The untuned file and results file are both written into TUNABLEOP_DIR
+  # (which defaults to CUSTOM_DIR, a persisted volume).
+  if [[ "${ENABLE_TUNABLEOP_TUNING}" == "1" && ! -f "$TUNABLEOP_UNTUNED_FILE" ]]; then
+    log "No TunableOp untuned file in persistent dir; enabling recording for this run"
+    : "${PYTORCH_TUNABLEOP_ENABLED:=1}"
+    : "${PYTORCH_TUNABLEOP_TUNING:=0}"
+    : "${PYTORCH_TUNABLEOP_RECORD_UNTUNED:=1}"
+    : "${PYTORCH_TUNABLEOP_UNTUNED_FILENAME:=$TUNABLEOP_UNTUNED_FILE}"
+    : "${PYTORCH_TUNABLEOP_FILENAME:=$TUNABLEOP_RESULTS_FILE}"
+    export PYTORCH_TUNABLEOP_ENABLED \
+           PYTORCH_TUNABLEOP_TUNING \
+           PYTORCH_TUNABLEOP_RECORD_UNTUNED \
+           PYTORCH_TUNABLEOP_UNTUNED_FILENAME \
+           PYTORCH_TUNABLEOP_FILENAME
+  fi
+
+  # --- TunableOp tuning check & offline tuning (if configured) ---
+  ensure_tunableop_tuning
 
   log "Starting ComfyUI: python main.py $COMMANDLINE_ARGS"
   cd "$COMFY_DIR"
