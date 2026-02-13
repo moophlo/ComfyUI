@@ -37,6 +37,22 @@ VAE_APPROX_DIR="$MODELS_DIR/vae_approx"
 : "${TUNABLEOP_RESULTS_FILE:=$TUNABLEOP_DIR/tunableop_results0.csv}"
 : "${TUNABLEOP_UNTUNED_FILE:=$TUNABLEOP_DIR/tunableop_untuned0.csv}"
 
+# PyTorch inserts device ordinal into filenames (e.g. tunableop_results00.csv, tunableop_untuned00.csv).
+# Resolve the actual untuned path: prefer explicit path, else look for .../tunableop_untuned0.csv or .../tunableop_untuned00.csv.
+find_tunableop_untuned_file() {
+  if [[ -f "$TUNABLEOP_UNTUNED_FILE" ]]; then
+    echo "$TUNABLEOP_UNTUNED_FILE"
+    return
+  fi
+  if [[ "$TUNABLEOP_UNTUNED_FILE" == "$TUNABLEOP_DIR/tunableop_untuned0.csv" ]]; then
+    if [[ -f "$TUNABLEOP_DIR/tunableop_untuned00.csv" ]]; then
+      echo "$TUNABLEOP_DIR/tunableop_untuned00.csv"
+      return
+    fi
+  fi
+  echo ""
+}
+
 log() { echo "[$(date -Is)] $*"; }
 
 require_cmd() {
@@ -134,20 +150,19 @@ ensure_tunableop_tuning() {
 
   log "Checking TunableOp tuning status"
 
-  # Prefer the configured untuned file path under the persistent directory.
-  # If it doesn't exist but we find a legacy/default untuned file in COMFY_DIR,
-  # copy it into the persistent volume so it survives container rebuilds.
-  if [[ ! -f "$TUNABLEOP_UNTUNED_FILE" ]]; then
-    if [[ "$TUNABLEOP_UNTUNED_FILE" == "$TUNABLEOP_DIR/tunableop_untuned0.csv" && -f "$COMFY_DIR/tunableop_untuned0.csv" ]]; then
-      log "Copying TunableOp untuned file from COMFY_DIR to persistent dir: $TUNABLEOP_DIR"
-      mkdir -p "$TUNABLEOP_DIR"
-      cp "$COMFY_DIR/tunableop_untuned0.csv" "$TUNABLEOP_UNTUNED_FILE" || true
-    fi
+  # Resolve untuned file: may be tunableop_untuned0.csv or tunableop_untuned00.csv (device ordinal).
+  untuned_path="$(find_tunableop_untuned_file)"
+  if [[ -z "$untuned_path" && "$TUNABLEOP_UNTUNED_FILE" == "$TUNABLEOP_DIR/tunableop_untuned0.csv" && -f "$COMFY_DIR/tunableop_untuned0.csv" ]]; then
+    log "Copying TunableOp untuned file from COMFY_DIR to persistent dir: $TUNABLEOP_DIR"
+    mkdir -p "$TUNABLEOP_DIR"
+    cp "$COMFY_DIR/tunableop_untuned0.csv" "$TUNABLEOP_UNTUNED_FILE" || true
+    untuned_path="$TUNABLEOP_UNTUNED_FILE"
   fi
+  [[ -n "$untuned_path" ]] || untuned_path="$TUNABLEOP_UNTUNED_FILE"
 
   TUNABLEOP_DIR="$TUNABLEOP_DIR" \
   TUNABLEOP_RESULTS_FILE="$TUNABLEOP_RESULTS_FILE" \
-  TUNABLEOP_UNTUNED_FILE="$TUNABLEOP_UNTUNED_FILE" \
+  TUNABLEOP_UNTUNED_FILE="$untuned_path" \
   "$VIRTUAL_ENV/bin/python" "$COMFY_DIR/tunableop_check_and_tune.py" || true
 }
 
@@ -230,15 +245,21 @@ main() {
 
   # If TunableOp tuning is enabled and we don't yet have an untuned file in the
   # persistent location, configure PyTorch to record untuned GEMMs during this run.
-  # The untuned file and results file are both written into TUNABLEOP_DIR
-  # (which defaults to CUSTOM_DIR, a persisted volume).
-  if [[ "${ENABLE_TUNABLEOP_TUNING}" == "1" && ! -f "$TUNABLEOP_UNTUNED_FILE" ]]; then
+  # Use absolute paths so PyTorch writes into the persistent dir (PyTorch may append
+  # device ordinal to the name, e.g. tunableop_untuned00.csv).
+  untuned_exists="$(find_tunableop_untuned_file)"
+  if [[ "${ENABLE_TUNABLEOP_TUNING}" == "1" && -z "$untuned_exists" ]]; then
     log "No TunableOp untuned file in persistent dir; enabling recording for this run"
+    # Ensure absolute paths (PyTorch may treat relative paths as CWD)
+    tunableop_results_abs="$TUNABLEOP_RESULTS_FILE"
+    tunableop_untuned_abs="$TUNABLEOP_UNTUNED_FILE"
+    [[ "$tunableop_results_abs" == /* ]] || tunableop_results_abs="$TUNABLEOP_DIR/$tunableop_results_abs"
+    [[ "$tunableop_untuned_abs" == /* ]] || tunableop_untuned_abs="$TUNABLEOP_DIR/$tunableop_untuned_abs"
     : "${PYTORCH_TUNABLEOP_ENABLED:=1}"
     : "${PYTORCH_TUNABLEOP_TUNING:=0}"
     : "${PYTORCH_TUNABLEOP_RECORD_UNTUNED:=1}"
-    : "${PYTORCH_TUNABLEOP_UNTUNED_FILENAME:=$TUNABLEOP_UNTUNED_FILE}"
-    : "${PYTORCH_TUNABLEOP_FILENAME:=$TUNABLEOP_RESULTS_FILE}"
+    : "${PYTORCH_TUNABLEOP_UNTUNED_FILENAME:=$tunableop_untuned_abs}"
+    : "${PYTORCH_TUNABLEOP_FILENAME:=$tunableop_results_abs}"
     export PYTORCH_TUNABLEOP_ENABLED \
            PYTORCH_TUNABLEOP_TUNING \
            PYTORCH_TUNABLEOP_RECORD_UNTUNED \

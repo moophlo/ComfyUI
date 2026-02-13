@@ -74,7 +74,9 @@ def main() -> int:
     if not os.path.exists(untuned_file):
         log(
             "No valid tuning file found and untuned file is missing; "
-            "skipping offline tuning. TunableOp can still tune online if enabled."
+            "skipping offline tuning. Run a GPU workload with recording enabled to create "
+            "the untuned file (e.g. tunableop_untuned00.csv), then restart. "
+            "TunableOp can still tune online if enabled."
         )
         return 0
 
