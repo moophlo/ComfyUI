@@ -34,21 +34,27 @@ VAE_APPROX_DIR="$MODELS_DIR/vae_approx"
 # for TunableOp result files, so tunings survive container rebuilds.
 : "${ENABLE_TUNABLEOP_TUNING:=1}"
 : "${TUNABLEOP_DIR:=$CUSTOM_DIR}"
-: "${TUNABLEOP_RESULTS_FILE:=$TUNABLEOP_DIR/tunableop_results0.csv}"
-: "${TUNABLEOP_UNTUNED_FILE:=$TUNABLEOP_DIR/tunableop_untuned0.csv}"
 
-# PyTorch inserts device ordinal into filenames (e.g. tunableop_results00.csv, tunableop_untuned00.csv).
-# Resolve the actual untuned path: prefer explicit path, else look for .../tunableop_untuned0.csv or .../tunableop_untuned00.csv.
+# IMPORTANT: Use *base* filenames without a device ordinal.
+# PyTorch's TunableOp will append the GPU ordinal automatically when
+# insert_device_ordinal=True is used (e.g. tunableop_results0.csv).
+# If you include an ordinal here (e.g. ...results0.csv) you will end up with
+# confusing double-ordinal filenames like ...results00.csv.
+: "${TUNABLEOP_RESULTS_FILE:=$TUNABLEOP_DIR/tunableop_results.csv}"
+: "${TUNABLEOP_UNTUNED_FILE:=$TUNABLEOP_DIR/tunableop_untuned.csv}"
+
+# Resolve the actual untuned path.
+# When record-untuned is enabled, TunableOp writes tunableop_untuned<ordinal>.csv
+# (e.g. tunableop_untuned0.csv) in the current working directory.
 find_tunableop_untuned_file() {
   if [[ -f "$TUNABLEOP_UNTUNED_FILE" ]]; then
     echo "$TUNABLEOP_UNTUNED_FILE"
     return
   fi
-  if [[ "$TUNABLEOP_UNTUNED_FILE" == "$TUNABLEOP_DIR/tunableop_untuned0.csv" ]]; then
-    if [[ -f "$TUNABLEOP_DIR/tunableop_untuned00.csv" ]]; then
-      echo "$TUNABLEOP_DIR/tunableop_untuned00.csv"
-      return
-    fi
+  # Most deployments here are single-GPU (ordinal 0)
+  if [[ -f "$TUNABLEOP_DIR/tunableop_untuned0.csv" ]]; then
+    echo "$TUNABLEOP_DIR/tunableop_untuned0.csv"
+    return
   fi
   echo ""
 }
@@ -150,13 +156,13 @@ ensure_tunableop_tuning() {
 
   log "Checking TunableOp tuning status"
 
-  # Resolve untuned file: may be tunableop_untuned0.csv or tunableop_untuned00.csv (device ordinal).
+  # Resolve untuned file (typically tunableop_untuned0.csv).
   untuned_path="$(find_tunableop_untuned_file)"
-  if [[ -z "$untuned_path" && "$TUNABLEOP_UNTUNED_FILE" == "$TUNABLEOP_DIR/tunableop_untuned0.csv" && -f "$COMFY_DIR/tunableop_untuned0.csv" ]]; then
+  if [[ -z "$untuned_path" && -f "$COMFY_DIR/tunableop_untuned0.csv" ]]; then
     log "Copying TunableOp untuned file from COMFY_DIR to persistent dir: $TUNABLEOP_DIR"
     mkdir -p "$TUNABLEOP_DIR"
-    cp "$COMFY_DIR/tunableop_untuned0.csv" "$TUNABLEOP_UNTUNED_FILE" || true
-    untuned_path="$TUNABLEOP_UNTUNED_FILE"
+    cp "$COMFY_DIR/tunableop_untuned0.csv" "$TUNABLEOP_DIR/tunableop_untuned0.csv" || true
+    untuned_path="$TUNABLEOP_DIR/tunableop_untuned0.csv"
   fi
   [[ -n "$untuned_path" ]] || untuned_path="$TUNABLEOP_UNTUNED_FILE"
 
@@ -245,34 +251,55 @@ main() {
 
   # If TunableOp tuning is enabled and we don't yet have an untuned file in the
   # persistent location, configure PyTorch to record untuned GEMMs during this run.
-  # Use absolute paths so PyTorch writes into the persistent dir (PyTorch may append
-  # device ordinal to the name, e.g. tunableop_untuned00.csv).
+  # IMPORTANT: For the *first* run we want to record the untuned GEMMs.
+  # TunableOp writes the untuned CSV into the current working directory, so we
+  # start ComfyUI with CWD=$TUNABLEOP_DIR to ensure the file is persisted.
   untuned_exists="$(find_tunableop_untuned_file)"
   if [[ "${ENABLE_TUNABLEOP_TUNING}" == "1" && -z "$untuned_exists" ]]; then
     log "No TunableOp untuned file in persistent dir; enabling recording for this run"
-    # Ensure absolute paths (PyTorch may treat relative paths as CWD)
-    tunableop_results_abs="$TUNABLEOP_RESULTS_FILE"
-    tunableop_untuned_abs="$TUNABLEOP_UNTUNED_FILE"
-    [[ "$tunableop_results_abs" == /* ]] || tunableop_results_abs="$TUNABLEOP_DIR/$tunableop_results_abs"
-    [[ "$tunableop_untuned_abs" == /* ]] || tunableop_untuned_abs="$TUNABLEOP_DIR/$tunableop_untuned_abs"
     : "${PYTORCH_TUNABLEOP_ENABLED:=1}"
     : "${PYTORCH_TUNABLEOP_TUNING:=0}"
     : "${PYTORCH_TUNABLEOP_RECORD_UNTUNED:=1}"
-    : "${PYTORCH_TUNABLEOP_UNTUNED_FILENAME:=$tunableop_untuned_abs}"
-    : "${PYTORCH_TUNABLEOP_FILENAME:=$tunableop_results_abs}"
+    # Do NOT set PYTORCH_TUNABLEOP_FILENAME on the first run.
+    # If set to a non-existent file, PyTorch will try to read it and log an error.
+    unset PYTORCH_TUNABLEOP_FILENAME || true
     export PYTORCH_TUNABLEOP_ENABLED \
            PYTORCH_TUNABLEOP_TUNING \
-           PYTORCH_TUNABLEOP_RECORD_UNTUNED \
-           PYTORCH_TUNABLEOP_UNTUNED_FILENAME \
-           PYTORCH_TUNABLEOP_FILENAME
+           PYTORCH_TUNABLEOP_RECORD_UNTUNED
   fi
 
   # --- TunableOp tuning check & offline tuning (if configured) ---
   ensure_tunableop_tuning
 
   log "Starting ComfyUI: python main.py $COMMANDLINE_ARGS"
-  cd "$COMFY_DIR"
-  exec "$VIRTUAL_ENV/bin/python" main.py $COMMANDLINE_ARGS
+
+  # If we are recording untuned GEMMs, ensure CWD is the persistent dir so
+  # tunableop_untuned0.csv lands there.
+  if [[ "${PYTORCH_TUNABLEOP_RECORD_UNTUNED:-0}" == "1" ]]; then
+    cd "$TUNABLEOP_DIR"
+  else
+    cd "$COMFY_DIR"
+  fi
+
+  # Start in background so PID 1 can forward signals and allow graceful shutdown
+  # (important for flushing TunableOp CSVs).
+  "$VIRTUAL_ENV/bin/python" "$COMFY_DIR/main.py" $COMMANDLINE_ARGS &
+  CHILD=$!
+
+  term_handler() {
+    log "Received TERM/INT: forwarding to ComfyUI process group (PID $CHILD)"
+    # Send TERM to the whole process group so compile_worker children exit too.
+    PGID=$(ps -o pgid= -p "$CHILD" | tr -d ' ' || true)
+    if [[ -n "$PGID" ]]; then
+      kill -TERM -"$PGID" 2>/dev/null || true
+    else
+      kill -TERM "$CHILD" 2>/dev/null || true
+    fi
+    wait "$CHILD" 2>/dev/null || true
+  }
+  trap term_handler TERM INT
+
+  wait "$CHILD"
 }
 
 main "$@"
